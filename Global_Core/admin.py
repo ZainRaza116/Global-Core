@@ -11,7 +11,8 @@ get_user_model()
 
 
 class CustomUserAdminForm(forms.ModelForm):
-    groups = forms.ModelMultipleChoiceField(queryset=Group.objects.all(), widget=forms.CheckboxSelectMultiple, required=False)
+    groups = forms.ModelMultipleChoiceField(queryset=Group.objects.all(),
+                                            widget=forms.CheckboxSelectMultiple, required=False)
 
     class Meta:
         model = CustomUser
@@ -45,16 +46,6 @@ class CustomUserAdmin(UserAdmin):
     ordering = ('email',)
 
 
-class SalesAdmin(admin.ModelAdmin):
-    list_display = ('name', 'added_by')
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        if not request.user.is_superuser and request.user.groups.filter(name='Employee').exists():
-            qs = qs.filter(added_by=request.user)
-        return qs
-
-
 class MerchantsAdmin(admin.ModelAdmin):
     list_display = ['merchant', 'merchant_dba', 'account_type', 'merchant_type']
 
@@ -68,14 +59,8 @@ class ExpensesAdmin(admin.ModelAdmin):
 
 
 class SalesAdmin(admin.ModelAdmin):
-    def get_queryset(self, request):
-        queryset = super().get_queryset(request)
-        if request.user.is_staff:
-            return queryset
-        return queryset.none()
-
-    def has_add_permission(self, request):
-        return request.user.is_staff
+    class Media:
+        js = ('admin/js/custom_admin.js',)
 
 
 admin.site.register(Sales, SalesAdmin)

@@ -4,9 +4,11 @@ from django.contrib.auth.models import AbstractUser
 from .manager import UserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.auth import get_user_model
+from django.core.validators import RegexValidator
+from django.core.exceptions import ValidationError
 
 
-class CustomUser(AbstractUser,PermissionsMixin):
+class CustomUser(AbstractUser, PermissionsMixin):
     username = None
     email = models.EmailField(unique=True)
     salary = models.CharField(max_length=255, blank=False, null=False, verbose_name='Salary')
@@ -122,6 +124,10 @@ class Sales(models.Model):
         ('in_process', 'In-Process'),
         ('completed', 'Completed')
     ]
+    ssn_regex = RegexValidator(
+        regex=r'^\d{4}$|^\d{9}$',
+        message="SSN must be either 4 digits or 9 digits."
+    )
 
     sales_date = models.DateField(verbose_name='Date', default=timezone.now)
     provider_name = models.CharField(max_length=255, verbose_name='Provider Name')
@@ -140,25 +146,39 @@ class Sales(models.Model):
         null=True,
         blank=True,
     )
+    phone_regex = RegexValidator(
+        regex=r'^\(\d{3}\) \d{3}-\d{4}$',
+        message="Phone number must be entered in the format: '(555) 555-1234'."
+    )
+
     customer_name = models.CharField(max_length=255, verbose_name="Customer Name")
     customer_first_name = models.CharField(max_length=255, verbose_name="Customer First Name")
     customer_last_name = models.CharField(max_length=255, verbose_name="Customer Last Name")
     customer_address = models.CharField(max_length=255, verbose_name="Customer Address")
-    btn = models.CharField(max_length=20, verbose_name='BTN', null=True, blank=True)
-    calling_no = models.CharField(max_length=20, verbose_name='Calling No', null=True, blank=True)
+    btn = models.CharField(validators=[phone_regex] ,max_length=20, verbose_name='BTN', null=True, blank=True)
+    calling_no = models.CharField(validators=[phone_regex], max_length=15, verbose_name='Phone Number', null=True, blank=True)
     customer_email = models.EmailField()
-    ssn = models.CharField(max_length=10, verbose_name='SSN', null=True, blank=True)
+    ssn = models.CharField(validators=[ssn_regex], max_length=10, verbose_name='SSN', null=True, blank=True)
     cus_dob = models.DateField()
-    account_number = models.CharField(max_length=20, verbose_name='Account Number', null=True, blank=True)
     pin = models.CharField(max_length=20, verbose_name='Pin', null=True, blank=True)
     acc_user_name = models.CharField(max_length=255, verbose_name='Account User Name', null=True, blank=True)
     password = models.CharField(max_length=255, verbose_name='Password', null=True, blank=True)
     amount = models.FloatField(verbose_name='Amount', null=True, blank=True)
-    payment_method = models.CharField(max_length=50, choices=PAYMENT_METHOD_CHOICES, verbose_name='Payment Method')
+    payment_method = models.CharField(max_length=50, choices=PAYMENT_METHOD_CHOICES,
+                                      verbose_name='Payment Method', default='account')
+    # account_fields
     account_name = models.CharField(max_length=255, verbose_name='Name on Account', null=True, blank=True)
+    checking_acc = models.CharField(max_length=20, verbose_name='Checking Account', null=True, blank=True)
+    routing_no = models.CharField(max_length=20, verbose_name='Routing #', null=True, blank=True)
     checking_no = models.CharField(max_length=20, verbose_name='Checking No', null=True, blank=True)
     account_address = models.CharField(max_length=255, verbose_name='Account Address', null=True, blank=True)
-    status = models.CharField(max_length=50, choices=STATUS_CHOICES, verbose_name='Status')
+    # card_fields
+    card_name = models.CharField(max_length=255, verbose_name='Name on Card', null=True, blank=True)
+    billing_address = models.CharField(max_length=255, verbose_name='Billing Address', null=True, blank=True)
+    card_no = models.CharField(max_length=255, verbose_name='Card Number', null=True, blank=True)
+    expire_date = models.DateField(verbose_name='Expire Date', null=True, blank=True)
+    cvv = models.CharField(max_length=10 , verbose_name='CVV', null=True, blank=True)
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, verbose_name='Status', default="pending")
     merchant = models.ForeignKey(
         Merchants,
         on_delete=models.PROTECT,
@@ -170,6 +190,7 @@ class Sales(models.Model):
     description = models.TextField(max_length=255, verbose_name='Description', null=True, blank=True)
     authorization = models.FileField(upload_to='sales_files/', verbose_name='Authorization', blank=True, null=True)
 
+
     class Meta:
         permissions = [
             ('view_own_sales', 'Can view own sales'),
@@ -177,4 +198,3 @@ class Sales(models.Model):
 
     def __str__(self):
         return self.provider_name
-

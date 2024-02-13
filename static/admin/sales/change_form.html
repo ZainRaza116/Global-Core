@@ -1,0 +1,12 @@
+{% extends 'admin/change_form.html' %}
+{% load static %}
+
+{% block admin_change_form_content %}
+{{ block.super }}
+<button type="button" id="add-card-btn">Add ADD</button>
+{% endblock %}
+
+{% block admin_change_form_document_ready %}
+{{ block.super }}
+<script type="text/javascript" src="{% static 'admin/js/custom_admin.js' %}"></script>
+{% endblock %}
