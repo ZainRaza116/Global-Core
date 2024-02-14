@@ -1,0 +1,44 @@
+{% extends 'admin/change_form.html' %}
+{% load static %}
+
+{% block admin_change_form_document_ready %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'admin/js/custom_admin.js' %}"></script>
+{% endblock %}
+
+{% block field_sets %}
+    {{ block.super }}
+        <style>
+            .inputBox{
+                align-items: center;
+            }
+            @media screen and (max-width: 767px) {
+                .inputBox{
+                    flex-direction: column;
+                    align-items: start;
+                    justify-content: start;
+                }
+            }
+        </style>
+        <div id="card-container">
+        <template id="card-template">
+            <div class="card-fields" style="display: flex; flex-direction: column">
+                <!-- Include card fields here -->
+                <div class="inputBox" style="display: flex; padding: 10px">
+                    <label style="width: 170px">Card Name:</label>
+                    <input type="text" name="card_name" style="width: 280px">
+                </div>
+                <!-- Add other card fields -->
+                <label>Billing Address:</label>
+                <input type="text" name="billing_address">
+                <label>Card Number:</label>
+                <input type="text" name="card_no">
+                <label>Expire Date:</label>
+                <input type="date" name="expire_date">
+                <label>CVV:</label>
+                <input type="text" name="cvv">
+            </div>
+        </template>
+    </div>
+
+{% endblock %}

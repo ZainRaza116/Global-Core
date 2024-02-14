@@ -32,3 +32,22 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleFields();
     });
 });
+// custom_admin.js
+
+document.addEventListener("DOMContentLoaded", function() {
+    // Function to add card fields
+    function addCardFields() {
+        // Get the card container element
+        var cardContainer = document.getElementById("card-container");
+
+        // Get the card template
+        var cardTemplate = document.getElementById("card-template").content.cloneNode(true);
+
+        // Append the cloned card template to the card container
+        cardContainer.appendChild(cardTemplate);
+    }
+
+    // Add event listener to the "Add Card" button
+    var addCardButton = document.getElementById("add-card-button");
+    addCardButton.addEventListener("click", addCardFields);
+});

@@ -1,23 +1,16 @@
 from django import forms
-from django.core.validators import RegexValidator
 from .models import Sales
+from django.contrib import admin
+
+from django.forms.models import inlineformset_factory
+from .models import Sales, Card
 
 
-class SalesForm(forms.ModelForm):
-    # Define a regex pattern for American phone numbers
-    phone_regex = RegexValidator(
-        regex=r'^\(\d{3}\) \d{3}-\d{4}$',
-        message="Phone number must be entered in the format: '(555) 555-1234'."
-    )
+class CardInline(admin.TabularInline):
+    model = Card
+    extra = 1  # Number of extra forms to display
 
-    # Add the phone number field with the validator
-    calling_no = forms.CharField(
-        validators=[phone_regex],
-        max_length=15,
-        required=False,
-        label='Phone Number'
-    )
+class SalesAdmin(admin.ModelAdmin):
+    inlines = [CardInline]
 
-    class Meta:
-        model = Sales
-        fields = '__all__'  # or specify the fields you want to include in the form
+admin.site.register(Sales, SalesAdmin)

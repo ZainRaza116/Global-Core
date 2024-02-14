@@ -13,6 +13,3 @@ class SalesAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         # Grant permission to add sales only to staff users
         return request.user.is_staff
-
-# Register the Sales model with the custom admin class
-admin.site.register(Sales, SalesAdmin)

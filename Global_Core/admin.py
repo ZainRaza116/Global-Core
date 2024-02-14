@@ -58,9 +58,17 @@ class ExpensesAdmin(admin.ModelAdmin):
     list_display = ['date_incurred', 'title', 'amount', 'expenses_type']
 
 
+class CardInline(admin.TabularInline):
+    model = Card
+    extra = 1
+
+
 class SalesAdmin(admin.ModelAdmin):
-    class Media:
-        js = ('admin/js/custom_admin.js',)
+    inlines = [CardInline]
+    change_form_template = 'admin/sales/change_form.html'
+
+    # class Media:
+    #     js = ('admin/js/custom_admin.js',)
 
 
 admin.site.register(Sales, SalesAdmin)
