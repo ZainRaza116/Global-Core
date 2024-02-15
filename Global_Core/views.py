@@ -1,17 +1,27 @@
+# views.py
 from django.shortcuts import render
-from django.forms import formset_factory
-from .forms import SalesForm
+from django.contrib import messages
+from .models import Sales
+from .authorize_net import authorize_credit_card
 
 
-def add_sales(request):
-    SalesFormSet = formset_factory(SalesForm, can_delete=True)
+def enter_payment_details(request):
     if request.method == 'POST':
-        formset = SalesFormSet(request.POST)
-        if formset.is_valid():
-            instances = formset.save(commit=False)
-            for instance in instances:
-                instance.save()
-            return render(request, 'success.html')
-    else:
-        formset = SalesFormSet()
-    return render(request, 'add_sales.html', {'formset': formset})
+        # Extract payment information from the form
+        card_number = request.POST.get('card_number')
+        expiration_date = request.POST.get('expiration_date')
+        card_code = request.POST.get('card_code')
+        amount = request.POST.get('amount')
+
+        # Call the authorize_credit_card function with the provided payment details
+        response = authorize_credit_card(card_number, expiration_date, card_code, amount)
+
+        # Process the response from Authorize.Net and return an appropriate response
+        if response:
+            # Payment authorization successful
+            return JsonResponse({'message': 'Payment authorized successfully'})
+        else:
+            # Payment authorization failed
+            return JsonResponse({'error': 'Payment authorization failed'})
+
+    return render(request, 'enter_payment_details.html')

@@ -181,11 +181,6 @@ class Card(models.Model):
         verbose_name = 'Card'
         verbose_name_plural = 'Cards'
 
-    def clean(self):
-        if Card.objects.filter(sales=self.sales, primary_card=True).exists() and self.card_to_be_used:
-            raise ValidationError("Only one card can be marked as 'primary' per Sales instance.")
-        super().clean()
-
     def __str__(self):
         return f"Card - {self.card_no}"
 
@@ -218,3 +213,8 @@ class Accounts(models.Model):
     def __str__(self):
         return str(self.merchant_link)
 
+
+class PaymentDetail(models.Model):
+    sale = models.OneToOneField(Sales, on_delete=models.CASCADE, related_name='payment_detail')
+    merchant_name = models.CharField(max_length=255 , verbose_name='Merchant Name', default=timezone.now)
+    amount_paid = models.FloatField(verbose_name='Amount Paid')
