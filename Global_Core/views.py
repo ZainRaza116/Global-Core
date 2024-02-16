@@ -1,27 +1,24 @@
-# views.py
 from django.shortcuts import render
-from django.contrib import messages
-from .models import Sales
-from .authorize_net import authorize_credit_card
+from django.http import HttpResponse
+from .authorizepayment import charge_credit_card
 
 
-def enter_payment_details(request):
+def charge_credit_card_view(request):
     if request.method == 'POST':
-        # Extract payment information from the form
-        card_number = request.POST.get('card_number')
-        expiration_date = request.POST.get('expiration_date')
-        card_code = request.POST.get('card_code')
         amount = request.POST.get('amount')
+        cardNumber = request.POST.get('cardNumber')
+        expirationDate = request.POST.get('expirationDate')
+        cardCod = request.POST.get('cardCode')
+        firstName = request.POST.get('firstName')
+        lastName = request.POST.get('lastName')
+        company = request.POST.get('company')
+        address = request.POST.get('address')
+        state = request.POST.get('state')
+        zip_code = request.POST.get('zip')
 
-        # Call the authorize_credit_card function with the provided payment details
-        response = authorize_credit_card(card_number, expiration_date, card_code, amount)
-
-        # Process the response from Authorize.Net and return an appropriate response
-        if response:
-            # Payment authorization successful
-            return JsonResponse({'message': 'Payment authorized successfully'})
-        else:
-            # Payment authorization failed
-            return JsonResponse({'error': 'Payment authorization failed'})
-
-    return render(request, 'enter_payment_details.html')
+        response = charge_credit_card(amount, cardNumber, expirationDate, cardCod, firstName, lastName, company, address, state, zip_code)
+        return response
+        print(response)
+    else:
+        # Render the HTML template containing the form
+        return render(request, 'enter_payment_details.html')

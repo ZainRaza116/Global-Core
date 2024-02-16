@@ -218,3 +218,16 @@ class PaymentDetail(models.Model):
     sale = models.OneToOneField(Sales, on_delete=models.CASCADE, related_name='payment_detail')
     merchant_name = models.CharField(max_length=255 , verbose_name='Merchant Name', default=timezone.now)
     amount_paid = models.FloatField(verbose_name='Amount Paid')
+
+
+# from authorizenet.models import Response
+# from authorizenet.models import CIMResponse as BaseCIMResponse
+#
+#
+# class CustomCIMResponse(BaseCIMResponse):
+#     transaction_response = models.ForeignKey(
+#         'authorizenet.Response',
+#         on_delete=models.SET_NULL,
+#         blank=True,
+#         null=True
+#     )

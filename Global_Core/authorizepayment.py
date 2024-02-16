@@ -2,7 +2,7 @@
 Charge a credit card
 """
 
-import imp
+
 import os
 import sys
 
@@ -147,5 +147,6 @@ def charge_credit_card(amount, cardNumber , expirationDate , cardCod , firstName
 
 
 if (os.path.basename(__file__) == os.path.basename(sys.argv[0])):
-    charge_credit_card(charge_credit_card("100.0" , "4111111111111111" , "2035-12" , "123" )
-)
+    # Corrected charge_credit_card function call
+    charge_credit_card("100.0", "4111111111111111", "2035-12", "123", "zain", "raza", "digitolog", "model town", "txc",
+                       "234")

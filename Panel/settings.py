@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'admin_extra_buttons',
     'Global_Core.apps.GlobalCoreConfig',
 ]
 
@@ -69,6 +68,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+
             ],
         },
     },
@@ -133,6 +133,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
+AUTHNET_DEBUG = True
 AUTHORIZE_NET_LOGIN_ID = '57njF7yrLVFs'
-AUTHORIZE_NET_TRANSACTION_KEY = '7A3KM7qw4eabJ683'
+AUTHORIZE_NET_TRANSACTION_KEY = '42hTUkmRw78S987U'
+AUTHORIZENET_ENVIRONMENT = 'sandbox'
