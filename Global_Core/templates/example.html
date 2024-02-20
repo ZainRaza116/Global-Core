@@ -3,14 +3,17 @@
 <head>
     <title>3D Secure Checkout</title>
 </head>
+<!--<script src="admin/test.js"></script>-->
 <body>
-    <div id="result"></div> <!-- This div will display the value of 'e' -->
+    <div id="result"></div>
     <form id="checkoutForm" method="post">
         {% csrf_token %}
         <button type="button" id="checkoutButton">OK</button>
     </form>
     <script src="https://secure.networkmerchants.com/js/v1/Gateway.js"></script>
     <script>
+
+        console.log("asad")
         function getCookie(name) {
             const value = `; ${document.cookie}`;
             const parts = value.split(`; ${name}=`);
@@ -20,11 +23,11 @@
         const csrftoken = getCookie('csrftoken');
         const gateway = Gateway.create('checkout_public_4xa72wwg38MQUH5be88gHE24nFBZern4');
 
-        // Initialize the ThreeDSService
-        const threeDS = gateway.get3DSecure();
 
+        const threeDS = gateway.get3DSecure();
+        alert(threeDS)
         const options = {
-            cardNumber: "4111111111111111",
+            cardNumber: "4000000000002503",
             cardExpMonth: "01",
             cardExpYear: "2024",
             currency: 'USD',
@@ -45,7 +48,7 @@
         threeDSecureInterface.start('body');
 
         threeDSecureInterface.on('challenge', function (e) {
-            console.log('Challenged');
+           alert('Challenged');
         });
 
         document.getElementById('checkoutButton').addEventListener('click', function () {
@@ -55,7 +58,7 @@
         threeDSecureInterface.on('complete', function (e) {
             document.getElementById('result').innerText = JSON.stringify(e);
             fetch('/test/', {
-                method: 'POST',
+                method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': csrftoken,
@@ -87,7 +90,6 @@
             console.log(e);
         });
 
-        // Listen for any errors that might occur.
         gateway.on('error', function (e) {
             console.error(e);
         });

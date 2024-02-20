@@ -13,8 +13,16 @@ import os
 from django.conf import settings
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+from dotenv import load_dotenv
+load_dotenv()
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# PAYPAL_CLIENT_ID = os.environ.get('PAYPAL_CLIENT_ID')
+# PAYPAL_CLIENT_SECRET = os.environ.get('PAYPAL_CLIENT_SECRET')
+# print("****************")
+# print(PAYPAL_CLIENT_ID)
+
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Global_Core.settings')
 settings.configure()
@@ -41,6 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # 'paypal.standard.ipn'
     'Global_Core.apps.GlobalCoreConfig',
 ]
 
@@ -131,9 +140,16 @@ STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
-
+PAYPAL_TEST = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTHNET_DEBUG = True
 AUTHORIZE_NET_LOGIN_ID = '57njF7yrLVFs'
 AUTHORIZE_NET_TRANSACTION_KEY = '42hTUkmRw78S987U'
 AUTHORIZENET_ENVIRONMENT = 'sandbox'
+
+PAYPAL_CLIENT_ID = os.environ.get('PAYPAL_CLIENT_ID')
+PAYPAL_CLIENT_SECRET = os.environ.get('PAYPAL_CLIENT_SECRET')
+# Print out PayPal API credentials for verification
+print("****************")
+print("PayPal Client ID:", PAYPAL_CLIENT_ID)
+print("PayPal Client Secret:", PAYPAL_CLIENT_SECRET)
