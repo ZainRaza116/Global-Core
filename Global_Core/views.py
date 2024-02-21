@@ -43,44 +43,27 @@ def charge_credit_card_view(request):
 
 
 def NMI(request):
-    if request.method == 'GET':
-        # Hardcoded values for testing (replace these with actual values)
-        cc_number = '4000000000002503'
-        cc_exp = '1212'
-        cvv = '999'
-        amount = '5.00'
+        try:
+            fields = {
+                'security_key': 'P2DZKaQB7y68s7wQ3yMf9Ap4k4APZG5C',
+                'amount': '12.00',
+                'ccnumber': '4111111111111111',
+                'ccexp': '0124',
+                'cvv': '123',
+                'order-description': 'Example Charge',
+                'type': 'auth',
+            }
+            # Make POST request using requests library
+            response = requests.post('https://secure.networkmerchants.com/api/transact.php', data=fields)
+            print("*********************")
+            # Print the response
+            print(response.text)
 
-        # Initialize gwapi object
-        gw = gwapi()
+            return JsonResponse({'message': response.json()})
+        except json.JSONDecodeError:
+            # Handle JSON decoding errors
+            return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
 
-        # Set your security key
-        gw.setLogin("P2DZKaQB7y68s7wQ3yMf9Ap4k4APZG5C")
-
-        # Set hardcoded billing, shipping, and order information
-        gw.setBilling("John", "Smith", "Acme, Inc.", "123 Main St", "Suite 200", "Beverly Hills",
-                      "CA", "90210", "US", "555-555-5555", "555-555-5556", "support@example.com",
-                      "www.example.com")
-
-        gw.setShipping("Mary", "Smith", "na", "124 Shipping Main St", "Suite Ship", "Beverly Hills",
-                       "CA", "90210", "US", "support@example.com")
-
-        gw.setOrder("1234", "Big Order", 1, 2, "PO1234",
-                    request.META.get('REMOTE_ADDR'))
-        # Process the payment
-        response_code = gw.doSale(amount, cc_number, cc_exp, cvv)
-
-        # Display response based on the response code
-        if int(response_code) == 1:
-            return HttpResponse("Payment Approved")
-        elif int(response_code) == 2:
-            return HttpResponse("Payment Declined")
-        elif int(response_code) == 3:
-            return HttpResponse("Payment Error")
-        else:
-            return HttpResponse("Unknown Response")
-
-    else:
-        return render(request, 'enter_payment_details.html')
 
 
 import json
@@ -98,7 +81,7 @@ def test(request):
                 'security_key': 'P2DZKaQB7y68s7wQ3yMf9Ap4k4APZG5C',
                 'ccnumber': json_data['cardNumber'],
                 'ccexp': json_data['cardExpMonth'] + json_data['cardExpYear'][-2:],
-                'amount': '10.00',
+                'amount': json_data['amount'],
                 'email': json_data['email'],
                 'phone': json_data['phone'],
                 'city': json_data['city'],
@@ -196,7 +179,7 @@ def create_payment_paypal(request):
         },
         "transactions": [{
             "amount": {
-                "total": "10.00",
+                "total": "1.00",
                 "currency": "USD"
             },
             "description": "Payment description"
@@ -223,3 +206,40 @@ def execute_payment(request):
         return HttpResponse('Payment successful')
     else:
         return HttpResponse('Payment failed')
+
+
+import square
+
+
+def square_payment(request):
+    if request == "POST":
+        nonce = request.POST.get('nonce')
+        amount = request.POST.get('amount')
+
+        # Set up the request to Square's Payments API
+        headers = {
+            'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+            'Content-Type': 'application/json'
+        }
+        data = {
+            'source_id': nonce,
+            'amount_money': {
+                'amount': int(amount),
+                'currency': 'USD'
+            },
+            'idempotency_key': 'UNIQUE_KEY'  # Set a unique key for idempotency
+        }
+        print("failed")
+        # Send the request to charge the card
+        try:
+            response = requests.post('https://connect.squareup.com/v2/payments', headers=headers, data=json.dumps(data))
+            print(response.json())
+            if response.status_code == 200:
+                return JsonResponse({'success': True, 'message': 'Payment successful'})
+            else:
+                return JsonResponse({'success': False, 'message': 'Payment failed'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+
+    else:
+        return render(request, 'square.html')

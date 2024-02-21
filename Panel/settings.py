@@ -149,8 +149,12 @@ AUTHORIZENET_ENVIRONMENT = 'sandbox'
 
 PAYPAL_CLIENT_ID = os.environ.get('PAYPAL_CLIENT_ID')
 PAYPAL_CLIENT_SECRET = os.environ.get('PAYPAL_CLIENT_SECRET')
-# Print out PayPal API credentials for verification
 
-print("****************")
-print("PayPal Client ID:", PAYPAL_CLIENT_ID)
-print("PayPal Client Secret:", PAYPAL_CLIENT_SECRET)
+
+
+SQUARE_ACCESS_TOKEN = 'EAAAl2z8nouxfGLBcID8kiQYdBwJ4sU54S5UREZhqRuwMvvPg7MjOHHMTkSLMpU-'
+SQUARE_LOCATION_ID = 'L2A4P9RWBX8J2'
+SQUARE_APPLICATION_ID = 'sandbox-sq0idb-YGTPzC7WtzIuYTgHzFtSDg'
+
+
+
