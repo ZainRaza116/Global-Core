@@ -150,6 +150,7 @@ AUTHORIZENET_ENVIRONMENT = 'sandbox'
 PAYPAL_CLIENT_ID = os.environ.get('PAYPAL_CLIENT_ID')
 PAYPAL_CLIENT_SECRET = os.environ.get('PAYPAL_CLIENT_SECRET')
 # Print out PayPal API credentials for verification
+
 print("****************")
 print("PayPal Client ID:", PAYPAL_CLIENT_ID)
 print("PayPal Client Secret:", PAYPAL_CLIENT_SECRET)

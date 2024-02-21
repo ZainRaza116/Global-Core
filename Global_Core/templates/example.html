@@ -3,33 +3,28 @@
 <head>
     <title>3D Secure Checkout</title>
 </head>
-<!--<script src="admin/test.js"></script>-->
 <body>
     <div id="result"></div>
+    <div id="paymentForm"></div>
     <form id="checkoutForm" method="post">
         {% csrf_token %}
         <button type="button" id="checkoutButton">OK</button>
     </form>
     <script src="https://secure.networkmerchants.com/js/v1/Gateway.js"></script>
     <script>
-
-        console.log("asad")
-        function getCookie(name) {
+            function getCookie(name) {
             const value = `; ${document.cookie}`;
             const parts = value.split(`; ${name}=`);
             if (parts.length === 2) return parts.pop().split(';').shift();
         }
 
         const csrftoken = getCookie('csrftoken');
-        const gateway = Gateway.create('checkout_public_4xa72wwg38MQUH5be88gHE24nFBZern4');
-
-
+        const gateway = window.Gateway.create('checkout_public_4xa72wwg38MQUH5be88gHE24nFBZern4');
         const threeDS = gateway.get3DSecure();
-        alert(threeDS)
         const options = {
-            cardNumber: "4000000000002503",
+            cardNumber: "4111111111111111",
             cardExpMonth: "01",
-            cardExpYear: "2024",
+            cardExpYear: "2028",
             currency: 'USD',
             amount: '10.00',
             email: 'none@example.com',
@@ -42,23 +37,26 @@
             lastName: 'Doe',
             postalCode: '60001'
         };
-
+        const paymentForm = document.getElementById('paymentForm');
         const threeDSecureInterface = threeDS.createUI(options);
 
-        threeDSecureInterface.start('body');
+        // Start the 3D Secure interface within the paymentForm div
+        if (paymentForm) {
+            threeDSecureInterface.start('#paymentForm'); // Pass the ID as a string
+        } else {
+            console.error('Element with ID "paymentForm" not found');
+        }
+        console.log("threeDSecureInterface", threeDSecureInterface);
 
+        // Listen for the 'challenge' event and log a message
         threeDSecureInterface.on('challenge', function (e) {
-           alert('Challenged');
-        });
-
-        document.getElementById('checkoutButton').addEventListener('click', function () {
-            threeDSecureInterface.complete();
+            console.log('Challenged');
         });
 
         threeDSecureInterface.on('complete', function (e) {
             document.getElementById('result').innerText = JSON.stringify(e);
-            fetch('/test/', {
-                method: 'GET',
+            fetch('test', {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': csrftoken,
