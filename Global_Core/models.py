@@ -134,13 +134,9 @@ class Sales(models.Model):
     acc_user_name = models.CharField(max_length=255, verbose_name='Account User Name', null=True, blank=True)
     password = models.CharField(max_length=255, verbose_name='Password', null=True, blank=True)
     amount = models.FloatField(verbose_name='Amount', null=True, blank=True)
-    payment_method = models.CharField(max_length=50, choices=PAYMENT_METHOD_CHOICES, verbose_name='Payment Method', default='account')
+    payment_method = models.CharField(max_length=50, choices=PAYMENT_METHOD_CHOICES, verbose_name='Payment Method', default='card')
     # account_fields
-    account_name = models.CharField(max_length=255, verbose_name='Name on Account', null=True, blank=True)
-    checking_acc = models.CharField(max_length=20, verbose_name='Checking Account', null=True, blank=True)
-    routing_no = models.CharField(max_length=20, verbose_name='Routing #', null=True, blank=True)
-    checking_no = models.CharField(max_length=20, verbose_name='Checking No', null=True, blank=True)
-    account_address = models.CharField(max_length=255, verbose_name='Account Address', null=True, blank=True)
+
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, verbose_name='Status', default="pending")
     merchant = models.ForeignKey(
         Merchants,
@@ -163,6 +159,15 @@ class Sales(models.Model):
         return self.provider_name
 
 
+class BankAccount(models.Model):
+    sales = models.ForeignKey(Sales, on_delete=models.CASCADE, related_name='Accounts')
+    account_name = models.CharField(max_length=255, verbose_name='Name on Account', null=True, blank=True)
+    checking_acc = models.CharField(max_length=20, verbose_name='Checking Account', null=True, blank=True)
+    routing_no = models.CharField(max_length=20, verbose_name='Routing #', null=True, blank=True)
+    checking_no = models.CharField(max_length=20, verbose_name='Checking No', null=True, blank=True)
+    account_address = models.CharField(max_length=255, verbose_name='Account Address', null=True, blank=True)
+
+
 class Card(models.Model):
     GIFT_CARD_OPTION = [
         ('yes', 'Yes'),
@@ -178,11 +183,24 @@ class Card(models.Model):
     card_to_be_used = models.BooleanField()
 
     class Meta:
+
         verbose_name = 'Card'
         verbose_name_plural = 'Cards'
 
     def __str__(self):
         return f"Card - {self.card_no}"
+
+    # def clean(self):
+    #     # Ensure only one card is set to be used per sales instance
+    #     if self.card_to_be_used and self.sales.cards.filter(card_to_be_used=True).exclude(pk=self.pk).exists():
+    #         raise ValidationError(_('Only one card can be set as "to be used" per sales.'))
+    #
+    # def save(self, *args, **kwargs):
+    #     # Ensure only one card is set to be used per sales instance
+    #     if self.card_to_be_used:
+    #         self.sales.cards.exclude(pk=self.pk).update(card_to_be_used=False)
+    #     super().save(*args, **kwargs)
+
 
 
 class Accounts(models.Model):
