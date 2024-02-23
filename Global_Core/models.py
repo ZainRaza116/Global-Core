@@ -167,6 +167,13 @@ class BankAccount(models.Model):
     checking_no = models.CharField(max_length=20, verbose_name='Checking No', null=True, blank=True)
     account_address = models.CharField(max_length=255, verbose_name='Account Address', null=True, blank=True)
 
+    class Meta:
+        verbose_name = 'Bank Account'
+        verbose_name_plural = 'Bank Accounts'
+
+    def __str__(self):
+        return f"Card - {self.account_name}"
+
 
 class Card(models.Model):
     GIFT_CARD_OPTION = [

@@ -12,7 +12,7 @@ from django import forms
 from django.contrib.auth.models import Group
 from django.contrib.admin import AdminSite
 # from . import urls
-
+from datetime import datetime
 
 get_user_model()
 
@@ -89,7 +89,7 @@ class SalesAdmin(admin.ModelAdmin):
         if obj is None:  # If adding a new object
             default_payment_method = 'card'
             if default_payment_method == 'card':
-                return [BankAccountInline(self.model, self.admin_site)]
+                return [CardInline(self.model, self.admin_site)]
             elif default_payment_method == 'account':
                 return [BankAccountInline(self.model, self.admin_site)]
             else:
@@ -115,31 +115,81 @@ class SalesAdmin(admin.ModelAdmin):
         return my_urls + urls
 
     def my_view(self, request, object_id):
-        try:
+        try :
             sales = Sales.objects.get(pk=object_id)
         except Sales.DoesNotExist:
-            return JsonResponse({'error': 'Sales object not found'}, status=404)
+            return JsonResponse({'error ; "Sale" does not exist'}, status = 400)
 
-        # Retrieve related Card objects using the 'cards' attribute
-        cards = sales.cards.all()
+        customer_info = {
+            'customer_name': sales.customer_name,
+            'customer_address': sales.customer_address,
+            'customer_email': sales.customer_email,
+            'amount': sales.amount
+        }
+        selected_card = sales.cards.filter(card_to_be_used=True).first()
+        # selected_card = cards_account.objects.filter(card_to_be_used=True).first()
+        today_date = datetime.now().date()
+        if selected_card:
+            print(selected_card.card_no)
+        else:
+            print("nothing card")
+        # cards_data = []
+        # for card in selected_card:
+        #     account_data = {
+        #             'card_name': card.card_name,
+        #             'billing_address': card.billing_address,
+        #             'card_no': card.card_no,
+        #             'expire_date': card.expire_date,
+        #             'cvv': card.cvv,
+        #             'gift_card': card.gift_card,
+        #             'card_to_be_used': card.card_to_be_used,
+        #             'billing': card.billing_address
+        #     }
+        #     cards_data.append(account_data)
+        #     print(cards_data)
+        context = {
+            'client_info': customer_info,
+            'today_date': today_date,
+            'cards': selected_card
+        }
 
-        # Construct a list to hold the data of each card
-        cards_data = []
-        for card in cards:
-            card_data = {
-                'card_name': card.card_name,
-                'billing_address': card.billing_address,
-                'card_no': card.card_no,
-                'expire_date': card.expire_date,
-                'cvv': card.cvv,
-                'gift_card': card.gift_card,
-                'card_to_be_used': card.card_to_be_used,
-                # Add more fields as needed
-            }
-            cards_data.append(card_data)
 
-        # Return the data as JSON
-        return JsonResponse(cards_data, safe=False)
+
+        # try:
+        #     sales = Sales.objects.get(pk=object_id)
+        # except Sales.DoesNotExist:
+        #     return JsonResponse({'error': 'Sales object not found'}, status=404)
+        #
+        # bank_accounts = sales.Accounts.all()
+        # if sales.payment_method == 'account':
+        #     # Construct a list to hold the data of each bank account
+        #     bank_accounts_data = []
+        #     for account in bank_accounts:
+        #         account_data = {
+        #             'account_name': account.account_name,
+        #             'checking_acc': account.checking_acc,
+        #             'routing_no': account.routing_no,
+        #             'checking_no': account.checking_no,
+        #             'account_address': account.account_address,
+        #         }
+        #         bank_accounts_data.append(account_data)
+        #         return JsonResponse(bank_accounts_data, safe=False)
+        # elif sales.payment_method == 'card':
+        #     cards_data = []
+        #     cards_account = sales.cards.all()
+        #     for card in cards_account:
+        #         account_data = {
+        #             'card_name': card.card_name,
+        #             'billing_address': card.billing_address,
+        #             'card_no': card.card_no,
+        #             'expire_date': card.expire_date,
+        #             'cvv': card.cvv,
+        #             'gift_card': card.gift_card,
+        #             'card_to_be_used': card.card_to_be_used,
+        #         }
+        #         cards_data.append(account_data)
+        #
+        #     return JsonResponse(cards_data, safe=False)
         # # At this point, 'sales' contains the Sales object with the given ID
         # # You can access its attributes and return the desired response
         #
@@ -151,20 +201,17 @@ class SalesAdmin(admin.ModelAdmin):
         #     'amount': sales.amount,
         #     'card' : sales.card_name,
         # }
-        # return JsonResponse(sales_data)
+        return render(request, "enter_payment_details.html" , context)
 
     def custom_action(self, obj):
+
         image_url = '/static/credit-card.png'  # Update the image path if needed
         return format_html(
-            '<a href="{}"><div style="max-height: 20px; max-width: 20px; overflow: hidden;"><img src="{}" alt="Credit Card Logo" style="width: 100%; height: auto;" /></div></a>',
+            '<a href="{}"><div style="max-height: 20px; max-width: 20px;'
+            ' overflow: hidden;"><img src="{}" alt="Credit Card Logo" style="width: 100%; height: auto;" /></div></a>',
             f"/admin/Global_Core/sales/{obj.id}/payment/", image_url)
-    def enter_payment_details(self, request, queryset):
-        # Your custom action logic here
-        # You can render a custom template for entering payment details
-        # or redirect to a specific URL where you have implemented the form
-        return HttpResponse("This is a placeholder for entering payment details.")
 
-    actions = [enter_payment_details]
+    custom_action.short_description = 'Actions'
 
 
 class MyAdminSite(AdminSite):
@@ -174,6 +221,8 @@ class MyAdminSite(AdminSite):
             path('enter_payment_details/<int:sales_id>/', self.enter_payment_details, name='enter_payment_details'),
         ]
         return custom_urls + urls
+
+
 my_admin_site = MyAdminSite()
 
 

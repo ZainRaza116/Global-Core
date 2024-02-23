@@ -1,0 +1,136 @@
+*{
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.main{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 0;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+
+.invoice{
+    width: 70%;
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+    padding: 50px 0;
+}
+
+.invoice .header{
+    display: flex;
+    justify-content: space-between;
+    padding: 0 50px;
+}
+
+.invoice .header div{
+    width: 100%;
+}
+
+.invoice .header .header-right{
+    display: flex;
+    flex-direction: column;
+}
+
+/* =============================content1 */
+.invoice .content1{
+    display: flex;
+    justify-content: space-between;
+    padding: 20px;
+    background-color: #79aec831;
+    margin: 20px 50px;
+    margin-top: 50px;
+    border-radius: 5px;
+}
+
+.invoice .content1 .table{
+    width: 250px;
+    font-size: 14px;
+}
+
+.invoice .content1 .table td {
+    text-align: right;
+}
+
+/* =============================content2 */
+.invoice .content2{
+    padding: 20px 50px;
+    display: flex;
+    justify-content: end;
+}
+
+.invoice .content2 .amount{
+    width: 200px;
+    padding: 20px;
+    background-color: #79aec831;
+    border-radius: 5px;
+}
+
+
+/* =============================content3 */
+
+.invoice .content3{
+    padding: 10px 50px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.invoice .content3 .select-input{
+    height: 30px;
+    padding: 5px;
+    border: 1px solid rgba(0, 0, 0, 0.162);
+    border-radius: 5px;
+    font-size: 12px;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+
+.invoice .content3 .select-input:focus{
+    outline: 1px solid #79aec831;
+}
+
+
+.invoice .btn-box{
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.invoice .btn-box button{
+    padding: 10px;
+    cursor: pointer;
+    border: 1px solid gray;
+    border-radius: 5px;
+    background-color: #79aec831;
+    width: 120px;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+
+}
+
+.invoice .btn-box button:hover{
+    scale: 1.02;
+}
+
+.invoice .btn-box button:active{
+    scale: 0.98;
+}
+
+
+@media screen and (max-width: 950px) {
+    .invoice{
+        width: 90%;
+        box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+        padding: 50px 0;
+    }
+}
+
+@media screen and (max-width: 700px) {
+    .invoice .content3{
+        padding: 10px 50px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+}
