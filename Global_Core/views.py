@@ -161,10 +161,10 @@ def checkout(request):
     return render(request, 'checkout.html')
 
 
-paypal_client_id = settings.PAYPAL_CLIENT_ID
-paypal_client_secret = settings.PAYPAL_CLIENT_SECRET
-print("***********************")
-print(paypal_client_id)
+# paypal_client_id = settings.PAYPAL_CLIENT_ID
+# paypal_client_secret = settings.PAYPAL_CLIENT_SECRET
+# print("***********************")
+# print(paypal_client_id)
 
 
 def create_payment_paypal(request):

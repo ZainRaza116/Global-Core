@@ -22,9 +22,9 @@
         const gateway = window.Gateway.create('checkout_public_4xa72wwg38MQUH5be88gHE24nFBZern4');
         const threeDS = gateway.get3DSecure();
         const options = {
-            cardNumber: "4420571021319037",
-            cardExpMonth: "03",
-            cardExpYear: "2027",
+            cardNumber: "4000000000002503",
+            cardExpMonth: "01",
+            cardExpYear: "2028",
             currency: 'USD',
             amount: '10.00',
             email: 'none@example.com',
@@ -46,7 +46,7 @@
         } else {
             console.error('Element with ID "paymentForm" not found');
         }
-        console.log("threeDSecureInterface", threeDSecureInterface);
+        console.log("threeDSecureInterface-html", threeDSecureInterface);
 
         // Listen for the 'challenge' event and log a message
         threeDSecureInterface.on('challenge', function (e) {

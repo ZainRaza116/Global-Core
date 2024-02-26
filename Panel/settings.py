@@ -12,9 +12,9 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import os
 from django.conf import settings
 from pathlib import Path
-
-from dotenv import load_dotenv
-load_dotenv()
+#
+# from dotenv import load_dotenv
+# load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -144,12 +144,8 @@ PAYPAL_TEST = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTHNET_DEBUG = True
 AUTHORIZE_NET_LOGIN_ID = '57njF7yrLVFs'
-AUTHORIZE_NET_TRANSACTION_KEY = '42hTUkmRw78S987U'
+AUTHORIZE_NET_TRANSACTION_KEY = '7z8bY25LdJs7R4Dj'
 AUTHORIZENET_ENVIRONMENT = 'sandbox'
-
-PAYPAL_CLIENT_ID = os.environ.get('PAYPAL_CLIENT_ID')
-PAYPAL_CLIENT_SECRET = os.environ.get('PAYPAL_CLIENT_SECRET')
-
 
 
 SQUARE_ACCESS_TOKEN = 'EAAAl2z8nouxfGLBcID8kiQYdBwJ4sU54S5UREZhqRuwMvvPg7MjOHHMTkSLMpU-'

@@ -152,7 +152,9 @@
 }
     </style>
 </head>
-<body>
+<form id="payment-form" method="POST", action="http://127.0.0.1:8000/admin/Global_Core/sales/{{ object_id }}/payment/">
+    {% csrf_token %}
+
     <div class="main">
         <div class="invoice">
             <div class="header">
@@ -175,11 +177,11 @@
                     <div class="header-right-box">
                     <p style="font-size: 14px; margin-top: 10px;">
                         <b>Card Number: </b>
-                        {{ cards.card_no }}
+                       **** **** **** {{ cards.card_no|slice:"-4:" }}
                     </p>
                     <p style="font-size: 14px;">
                         <b>Expiration Date: </b>
-                     {{ cards.expire_date }}
+                  {{ cards.expire_date|date:"m/Y" }}
                     </p>
                     <p style="font-size: 14px;">
                         <b>CVC</b>
@@ -203,31 +205,31 @@
             <div class="content2">
                 <div class="amount">
                     <p style="font-size: 14px;">Amount Due</p>
-                    <p style="text-align: right; font-size: 18px;"><b>${{ client_info.amount }}</b></p>
+                    <p name ="amount" style="text-align: right; font-size: 18px;"><b>${{ client_info.amount }}</b></p>
                 </div>
             </div>
             <div class="content3">
                 <div style="display: flex; flex-direction: column; gap: 5px;">
-                    <label style="font-size: 14px;">Security Option</label>
-                    <div style="font-size: 14px;">
-                        <label><input type="radio" name="security" />&nbsp;2D secure</label>
-                        <label><input type="radio" name="security" />&nbsp;3D secure</label>
-                    </div>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 5px;">
-                    <label style="font-size: 14px;">Sale/Authorize</label>
-                    <select class="select-input">
-                        <option>---Select---</option>
-                        <option>Sale</option>
-                        <option>Authorize</option>
-                    </select>
-                </div>
+            <label style="font-size: 14px;">Security Option</label>
+            <div style="font-size: 14px;">
+                <label><input type="radio" name="security" value="2D" checked>&nbsp;2D secure</label>
+                <label><input type="radio" name="security" value="3D">&nbsp;3D secure</label>
+            </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+            <label style="font-size: 14px;">Sale/Authorize</label>
+            <select id="sale-authorize-select" class="select-input" name = "payment_method">
+                <option>Sale</option>
+                <option>Authorize</option>
+            </select>
+        </div>
                 <div style="display: flex; flex-direction: column; gap: 5px;">
                     <label style="font-size: 14px;">Gateway</label>
-                    <select class="select-input">
+                    <select class="select-input" name = "gateway">
                         <option>---Select---</option>
-                        <option>Gateway 1</option>
-                        <option>Gateway 2</option>
+                        {% for merchant in merchants %}
+                        <option value="{{ merchant }}">{{ merchant }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 5px;">
@@ -240,10 +242,111 @@
                 </div>
             </div>
             <div class="btn-box">
-                <button>Submit</button>
+                <button type="submit">Submit</button>
             </div>
         </div>
     </div>
+</form>>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+
+
+        const securityOptions = document.querySelectorAll('input[name="security"]');
+        const saleAuthorizeSelect = document.getElementById("sale-authorize-select");
+        saleAuthorizeSelect.selectedIndex = 0;
+        securityOptions.forEach(option => {
+            option.addEventListener("change", function() {
+                if (this.value === "3D") {
+                    saleAuthorizeSelect.innerHTML = '<option>Sale</option>';
+                } else {
+                    saleAuthorizeSelect.innerHTML = '<option>Sale</option><option>Authorize</option>';
+                }
+            });
+        });
+    });
+
+</script>
+    <script src="https://secure.networkmerchants.com/js/v1/Gateway.js"></script>
+    <script>
+            function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        const csrftoken = getCookie('csrftoken');
+        const gateway = window.Gateway.create('checkout_public_4xa72wwg38MQUH5be88gHE24nFBZern4');
+        const threeDS = gateway.get3DSecure();
+        const options = {
+            cardNumber: "4000000000002503",
+            cardExpMonth: "01",
+            cardExpYear: "2028",
+            currency: 'USD',
+            amount: '10.00',
+            email: 'none@example.com',
+            phone: '8008675309',
+            city: 'New York',
+            state: 'NY',
+            address1: '123 First St.',
+            country: 'US',
+            firstName: 'Jane',
+            lastName: 'Doe',
+            postalCode: '60001'
+        };
+        const paymentForm = document.getElementById('paymentForm');
+        const threeDSecureInterface = threeDS.createUI(options);
+
+        // Start the 3D Secure interface within the paymentForm div
+        if (paymentForm) {
+            threeDSecureInterface.start('#paymentForm'); // Pass the ID as a string
+        } else {
+            console.error('Element with ID "paymentForm" not found');
+        }
+        console.log("threeDSecureInterface-html", threeDSecureInterface);
+
+        // Listen for the 'challenge' event and log a message
+        threeDSecureInterface.on('challenge', function (e) {
+            console.log('Challenged');
+        });
+
+        threeDSecureInterface.on('complete', function (e) {
+            document.getElementById('result').innerText = JSON.stringify(e);
+            fetch('http://127.0.0.1:8000/admin/Global_Core/sales/14/payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({
+                    ...options,
+                    cavv: e.cavv,
+                    xid: e.xid,
+                    eci: e.eci,
+                    cardHolderAuth: e.cardHolderAuth,
+                    threeDsVersion: e.threeDsVersion,
+                    directoryServerId: e.directoryServerId,
+                    cardHolderInfo: e.cardHolderInfo,
+                })
+            }).then(response => {
+                // if (!response.ok) {
+                //     throw new Error('Network response was not ok');
+                // }
+                console.log(response);
+                return response.json();
+            }).catch(error => {
+                console.error('Error during fetch:', error);
+            });
+        });
+
+        threeDSecureInterface.on('failure', function (e) {
+            console.log('failure');
+            console.log(e);
+        });
+
+        gateway.on('error', function (e) {
+            console.error(e);
+        });
+    </script>
 </body>
 </html>
 {% endblock %}
