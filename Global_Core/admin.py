@@ -20,7 +20,13 @@ from .authorizepayment import authorize_credit_card, charge_credit_card
 from .stripe_payment import authorize_stripe
 import stripe,json
 get_user_model()
+import squareup
+
 stripe.api_key = "sk_test_51OlnMEI2KysFcOYIr0VF0wDzn7MXL3b8gqAMwWgTFTknOfrBif7IlTNybkNVL6MRVnZyfggGyf8DCQejI58HY4TF004pAsr1D1"
+
+from django.shortcuts import render
+from paypalcheckoutsdk.core import PayPalHttpClient, SandboxEnvironment
+from paypalcheckoutsdk.orders import OrdersCreateRequest
 
 class CustomUserAdminForm(forms.ModelForm):
     groups = forms.ModelMultipleChoiceField(queryset=Group.objects.all(),
@@ -116,8 +122,147 @@ class SalesAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         my_urls = [
             path("<int:object_id>/payment/", self.admin_site.admin_view(self.my_view)),
+            path("<int:object_id>/payment/3D_secure", self.admin_site.admin_view(self.secure), name="secure"),
+            path("<int:object_id>/payment/paypal", self.admin_site.admin_view(self.paypal), name="paypal"),
+            path("<int:object_id>/payment/authorize_paypal", self.admin_site.admin_view(self.authorize_paypal), name="authorize_paypal")
         ]
         return my_urls + urls
+
+    def authorize_paypal(request, object_id):
+        sales = Sales.objects.get(pk=object_id)
+        environment = SandboxEnvironment(
+            client_id='AWTbh99Ts8lmshPbMfSB1XNNaSW9cwhNX6dMr-1ubyge1n3UgK4b2e6dtDcqdxcUz1sTO1ihwQsXc76O',
+            client_secret='EMX8JMUA00riKFopJ4ZNB7jbJq5grLyV_DohOUfFAj14nvDb2WhcR7fK2QRw4npzyRNjKmgSYg1sTg0Z')
+        client = PayPalHttpClient(environment)
+
+        create_request = OrdersCreateRequest()
+        create_request.prefer("return=representation")
+        create_request.request_body({
+            "intent": "AUTHORIZE",  # Set intent to AUTHORIZE for card authorization
+            "purchase_units": [{
+                "amount": {
+                    "currency_code": "USD",
+                    "value": sales.amount  # You can make this dynamic based on your requirements
+                }
+            }]
+        })
+
+        try:
+            response = client.execute(create_request)
+            order_id = response.result.id
+            return render(request, 'paypal.html', {'order_id': order_id, 'object_id': object_id, 'sales': sales})
+        except Exception as e:
+            print({'error_message': str(e)})
+            return render(request, 'error.html', {'error_message': str(e)})
+    def paypal(self, request, object_id):
+        sales = Sales.objects.get(pk=object_id)
+        if request.method == 'POST':
+            # Verify IPN data with PayPal (optional but recommended)
+            # Process the IPN data
+            ipn_data = request.POST.dict()
+
+            # Perform actions based on the IPN data, such as updating database records
+            # Example: Log IPN data to console
+            print("Received PayPal IPN:")
+            print(json.dumps(ipn_data, indent=4))
+
+            # Return HTTP 200 OK status to acknowledge receipt of IPN
+            return HttpResponse(status=200)
+        else:
+            environment = SandboxEnvironment(client_id='AWTbh99Ts8lmshPbMfSB1XNNaSW9cwhNX6dMr-1ubyge1n3UgK4b2e6dtDcqdxcUz1sTO1ihwQsXc76O', client_secret='EMX8JMUA00riKFopJ4ZNB7jbJq5grLyV_DohOUfFAj14nvDb2WhcR7fK2QRw4npzyRNjKmgSYg1sTg0Z')
+            client = PayPalHttpClient(environment)
+            # Create PayPal order
+            create_request = OrdersCreateRequest()
+            create_request.prefer("return=representation")
+            create_request.request_body({
+                "intent": "CAPTURE",
+                "purchase_units": [{
+                    "amount": {
+                        "currency_code": "USD",
+                        "value": sales.amount  # You can make this dynamic based on your requirements
+                    }
+                }]
+            })
+
+            try:
+                response = client.execute(create_request)
+                order_id = response.result.id
+                ipn_data = request.POST.dict()
+                print("Received PayPal IPN:")
+                print(json.dumps(ipn_data, indent=4))
+                return render(request, 'paypal.html', {'order_id': order_id, 'object_id': object_id, 'sales': sales})
+            except Exception as e:
+                print({'error_message': str(e)})
+                return render(request, 'error.html', {'error_message': str(e)})
+
+    def secure(self, request, object_id):
+
+        if request.method == 'POST':
+            try:
+                print(request.body)
+                json_data = json.loads(request.body)
+                print(json_data)
+
+                fields = {
+                    'security_key': 'P2DZKaQB7y68s7wQ3yMf9Ap4k4APZG5C',
+                    'ccnumber': json_data['cardNumber'],
+                    'ccexp': json_data['cardExpMonth'] + json_data['cardExpYear'][-2:],
+                    'amount': json_data['amount'],
+                    'email': json_data['email'],
+                    'phone': json_data['phone'],
+                    'city': json_data['city'],
+                    'address1': json_data['address1'],
+                    'country': json_data['country'],
+                    'first_name': json_data['firstName'],
+                    'last_name': json_data['lastName'],
+                    'zip': json_data['postalCode'],
+                    'cavv': json_data['cavv'],
+                    'xid': json_data.get('xid'),
+                    'eci': json_data.get('eci'),
+                    'cardholder_auth': json_data.get('cardHolderAuth'),
+                    'three_ds_version': json_data.get('threeDsVersion'),
+                    'directory_server_id': json_data.get('directoryServerId'),
+                    'cardholder_info': json_data.get('cardHolderInfo'),
+                }
+
+                # Make POST request using requests library
+                response = requests.post('https://secure.networkmerchants.com/api/transact.php', data=fields)
+
+                # Print the response
+                print(response.text)
+                return JsonResponse({'message': 'Data received successfully'})
+            except json.JSONDecodeError:
+                # Handle JSON decoding errors
+                return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
+
+        sales = Sales.objects.get(pk=object_id)
+        selected_card = sales.cards.filter(card_to_be_used=True).first()
+        expiration_date = selected_card.expire_date
+        expiration_month = expiration_date.strftime("%m")
+        expiration_year = expiration_date.strftime("%Y")
+        print(expiration_month, expiration_year)
+
+        customer_info = {
+            'customer_name': sales.customer_name,
+            'customer_address': sales.customer_address,
+            'customer_email': sales.customer_email,
+            'amount': sales.amount,
+            'phone': sales.calling_no,
+            'address': sales.customer_address,
+            'f_name': sales.customer_first_name,
+            'l_name': sales.customer_last_name,
+            'exp_mon': expiration_month,
+            'exp_year': expiration_year
+        }
+        context = {
+            'object_id': object_id,
+            'selected_card': selected_card,
+            'customer_info': customer_info,
+
+        }
+        # Render the template with the context and return an HttpResponse object
+        return render(request, "example.html", context)
+
     def my_view(self, request, object_id):
         if request.method == 'POST':
             sales = Sales.objects.get(pk=object_id)
@@ -150,14 +295,14 @@ class SalesAdmin(admin.ModelAdmin):
             elif payment_method == 'Authorize' and gateway == 'Authorize.net':
                 expirationDate = expirationDate1.strftime("%m%d")
                 xml_response = authorize_credit_card(amount, cardNumber, expirationDate, cardCod, firstName, lastName,
-                                                  company,
-                                                  address, state, zip_code)
+                                                     company,
+                                                     address, state, zip_code)
                 xml_string = ET.tostring(xml_response)
-                return HttpResponse(xml_string, content_type='text/xml')
+                return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
             # **************************  STRIPE  ******************************
             elif payment_method == 'Authorize' and gateway == 'Stripe':
                 try:
-                    amount = amount * 100
+                    amount = amount
                     print(amount)
                     authorize_stripe(amount)
                     # Assuming your view name is 'payment_view' and it expects an 'object_id' parameter
@@ -184,9 +329,9 @@ class SalesAdmin(admin.ModelAdmin):
                     # Print the response
                     print(response.text)
 
-                    return JsonResponse({'message': response.json()})
+                    return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
                 except json.JSONDecodeError:
-                    return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
+                    return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
 
             elif security == '2D' and payment_method == 'Sale' and gateway == 'NMI':
                 try:
@@ -206,48 +351,46 @@ class SalesAdmin(admin.ModelAdmin):
                     # Print the response
                     print(response.text)
 
-                    return JsonResponse({'message': response.json()})
+                    return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
                 except json.JSONDecodeError:
-                    return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
+                    return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
 
             elif security == '3D' and gateway == 'NMI':
-                 try:
-                     print("heklo")
-                     # Parse the JSON data sent from the client-side JavaScript
-                     json_data = json.loads(request.body)
-                     print(json_data)
+                print(object_id)
+                return redirect('/admin/Global_Core/sales/{}/payment/3D_secure'.format(object_id))
 
-                     fields = {
-                         'security_key': 'P2DZKaQB7y68s7wQ3yMf9Ap4k4APZG5C',
-                         'ccnumber': json_data['cardNumber'],
-                         'ccexp': json_data['cardExpMonth'] + json_data['cardExpYear'][-2:],
-                         'amount': json_data['amount'],
-                         'email': json_data['email'],
-                         'phone': json_data['phone'],
-                         'city': json_data['city'],
-                         'address1': json_data['address1'],
-                         'country': json_data['country'],
-                         'first_name': json_data['firstName'],
-                         'last_name': json_data['lastName'],
-                         'zip': json_data['postalCode'],
-                         'cavv': json_data['cavv'],
-                         'xid': json_data.get('xid'),
-                         'eci': json_data.get('eci'),
-                         'cardholder_auth': json_data.get('cardHolderAuth'),
-                         'three_ds_version': json_data.get('threeDsVersion'),
-                         'directory_server_id': json_data.get('directoryServerId'),
-                         'cardholder_info': json_data.get('cardHolderInfo'),
-                     }
+            elif payment_method == 'Sale' and gateway == 'PayPal':
+                return redirect('/admin/Global_Core/sales/{}/payment/paypal'.format(object_id))
+            elif payment_method == 'Authorize' and gateway == 'PayPal':
+                return redirect('/admin/Global_Core/sales/{}/payment/authorize_paypal'.format(object_id))
+            elif payment_method == 'Sale' and gateway == 'Square':
+                    square_client = square.Client(access_token=settings.SQUARE_ACCESS_TOKEN)
 
-                     return fields
-                     response = requests.post('https://secure.networkmerchants.com/api/transact.php', data=fields)
+                    # Handle form submission or other triggers for payment processing
+                    # For example, retrieve the amount from the form data
+                    amount = request.POST.get('amount')
 
-                     print(response.text)
-                     return JsonResponse({'message': 'Data received successfully'})
-                 except json.JSONDecodeError:
-                     print(JsonResponse)
-                 return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
+                    try:
+                        # Create a payment using Square API
+                        response = square_client.payments.create({
+                            "source_id": request.POST.get('nonce'),  # Payment nonce generated by Square payment form
+                            "amount_money": {
+                                "amount": amount,
+                                "currency": "USD"
+                            },
+                            "idempotency_key": "<YOUR_IDEMPOTENCY_KEY>"
+                        })
 
+                        # Handle successful payment
+                        if response.is_success():
+                            # Payment successful, update database or display success message
+                            return HttpResponse("Payment successful!")
+                        else:
+                            # Payment failed, display error message
+                            return HttpResponse("Payment failed: " + response.errors)
+                    except square.exceptions.ApiError as e:
+                        # Handle API errors
+                        return HttpResponse("API error: " + str(e))
             else:
                 return JsonResponse({'error': 'Invalid payment method or gateway'})
 
@@ -255,7 +398,7 @@ class SalesAdmin(admin.ModelAdmin):
             try:
                 sales = Sales.objects.get(pk=object_id)
             except Sales.DoesNotExist:
-                return JsonResponse({'error ; "Sale" does not exist'}, status = 400)
+                return JsonResponse({'error ; "Sale" does not exist'}, status=400)
 
             customer_info = {
                 'customer_name': sales.customer_name,
@@ -269,80 +412,15 @@ class SalesAdmin(admin.ModelAdmin):
             today_date = datetime.now().date()
             merchants = Merchants.objects.all()
 
-
-
-            # merchants = serialize('json', merchants_json)
-            # cards_data = []
-            # for card in selected_card:
-            #     account_data = {
-            #             'card_name': card.card_name,
-            #             'billing_address': card.billing_address,
-            #             'card_no': card.card_no,
-            #             'expire_date': card.expire_date,
-            #             'cvv': card.cvv,
-            #             'gift_card': card.gift_card,
-            #             'card_to_be_used': card.card_to_be_used,
-            #             'billing': card.billing_address
-            #     }
-            #     cards_data.append(account_data)
-            #     print(cards_data)
             context = {
                 'client_info': customer_info,
                 'today_date': today_date,
                 'cards': selected_card,
-                'merchants' : merchants,
-                'object_id' : object_id
+                'merchants': merchants,
+                'object_id': object_id
             }
 
-
-
-            # try:
-            #     sales = Sales.objects.get(pk=object_id)
-            # except Sales.DoesNotExist:
-            #     return JsonResponse({'error': 'Sales object not found'}, status=404)
-            #
-            # bank_accounts = sales.Accounts.all()
-            # if sales.payment_method == 'account':
-            #     # Construct a list to hold the data of each bank account
-            #     bank_accounts_data = []
-            #     for account in bank_accounts:
-            #         account_data = {
-            #             'account_name': account.account_name,
-            #             'checking_acc': account.checking_acc,
-            #             'routing_no': account.routing_no,
-            #             'checking_no': account.checking_no,
-            #             'account_address': account.account_address,
-            #         }
-            #         bank_accounts_data.append(account_data)
-            #         return JsonResponse(bank_accounts_data, safe=False)
-            # elif sales.payment_method == 'card':
-            #     cards_data = []
-            #     cards_account = sales.cards.all()
-            #     for card in cards_account:
-            #         account_data = {
-            #             'card_name': card.card_name,
-            #             'billing_address': card.billing_address,
-            #             'card_no': card.card_no,
-            #             'expire_date': card.expire_date,
-            #             'cvv': card.cvv,
-            #             'gift_card': card.gift_card,
-            #             'card_to_be_used': card.card_to_be_used,
-            #         }
-            #         cards_data.append(account_data)
-            #
-            #     return JsonResponse(cards_data, safe=False)
-            # # At this point, 'sales' contains the Sales object with the given ID
-            # # You can access its attributes and return the desired response
-            #
-            # # For example, you can return a JSON response with the Sales object's data
-            # sales_data = {
-            #     'id': sales.id,
-            #     'customer_name': sales.customer_name,
-            #     'customer_address': sales.customer_address,
-            #     'amount': sales.amount,
-            #     'card' : sales.card_name,
-            # }
-            return render(request, "enter_payment_details.html" , context)
+            return render(request, "enter_payment_details.html", context)
 
     def custom_action(self, obj):
 

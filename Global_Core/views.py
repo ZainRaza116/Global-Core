@@ -73,7 +73,7 @@ from django.http import JsonResponse
 def test(request):
     if request.method == 'POST':
         try:
-            # Parse the JSON data sent from the client-side JavaScript
+            print(request.body)
             json_data = json.loads(request.body)
             print(json_data)
 
@@ -103,7 +103,7 @@ def test(request):
             response = requests.post('https://secure.networkmerchants.com/api/transact.php', data=fields)
 
             # Print the response
-            print(response.text)
+
             return JsonResponse({'message': 'Data received successfully'})
         except json.JSONDecodeError:
             # Handle JSON decoding errors

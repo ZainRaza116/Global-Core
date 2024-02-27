@@ -1,17 +1,19 @@
 import stripe
 
+
 # Set your secret API key
 stripe.api_key = "sk_test_51OlnMEI2KysFcOYIr0VF0wDzn7MXL3b8gqAMwWgTFTknOfrBif7IlTNybkNVL6MRVnZyfggGyf8DCQejI58HY4TF004pAsr1D1"
 
 
 def authorize_stripe(amount):
+    print("Amount:", amount)
     try:
         authorization = stripe.Charge.create(
-            amount= amount,  # Amount in cents
+            amount= amount,
             currency="usd",
-            source="tok_visa",  # This is a test card token, replace with an actual card token
+            source="tok_visa",
             description="Example authorization",
-            capture=False  # Set capture to False for authorization
+            capture=False
         )
         charge_id = authorization.id
         capture = stripe.Charge.capture(

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Initiate Payment</title>
+    <script src="https://www.paypal.com/sdk/js?client-id=AWTbh99Ts8lmshPbMfSB1XNNaSW9cwhNX6dMr-1ubyge1n3UgK4b2e6dtDcqdxcUz1sTO1ihwQsXc76O"></script>
+</head>
+<body>
+    <div id="paypal-button-container"></div>
+
+    <script>
+        paypal.Buttons({
+            createOrder: function(data, actions) {
+                return actions.order.create({
+                    purchase_units: [{
+                        amount: {
+                            value: '{{ sales.amount }}'
+                        }
+                    }]
+                });
+            },
+            onApprove: function(data, actions) {
+                return actions.order.capture().then(function(details) {
+                    // Handle the payment completion
+                    alert('Payment completed successfully!');
+                });
+            }
+        }).render('#paypal-button-container');
+    </script>
+</body>
+</html>
