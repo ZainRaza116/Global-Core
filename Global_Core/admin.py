@@ -17,16 +17,14 @@ from datetime import datetime
 from django.core.serializers import serialize
 import lxml.etree as ET
 from .authorizepayment import authorize_credit_card, charge_credit_card
-from .stripe_payment import authorize_stripe
+from .stripe_payment import authorize_stripe, charge_stripe
 import stripe,json
 get_user_model()
-import squareup
-
-stripe.api_key = "sk_test_51OlnMEI2KysFcOYIr0VF0wDzn7MXL3b8gqAMwWgTFTknOfrBif7IlTNybkNVL6MRVnZyfggGyf8DCQejI58HY4TF004pAsr1D1"
-
 from django.shortcuts import render
 from paypalcheckoutsdk.core import PayPalHttpClient, SandboxEnvironment
 from paypalcheckoutsdk.orders import OrdersCreateRequest
+from .access_api import get_merchant_api_key , get_merchant_login_key
+
 
 class CustomUserAdminForm(forms.ModelForm):
     groups = forms.ModelMultipleChoiceField(queryset=Group.objects.all(),
@@ -122,39 +120,14 @@ class SalesAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         my_urls = [
             path("<int:object_id>/payment/", self.admin_site.admin_view(self.my_view)),
-            path("<int:object_id>/payment/3D_secure", self.admin_site.admin_view(self.secure), name="secure"),
-            path("<int:object_id>/payment/paypal", self.admin_site.admin_view(self.paypal), name="paypal"),
-            path("<int:object_id>/payment/authorize_paypal", self.admin_site.admin_view(self.authorize_paypal), name="authorize_paypal")
+            path("<int:object_id>/payment/3D_secure/<int:merchant_id>", self.admin_site.admin_view(self.secure), name="secure"),
+            path("<int:object_id>/payment/paypal/<int:merchant_id>", self.admin_site.admin_view(self.paypal), name="paypal"),
+            path("<int:object_id>/payment/authorize_paypal/<int:merchant_id>", self.admin_site.admin_view(self.authorize_paypal), name="authorize_paypal"),
         ]
         return my_urls + urls
 
-    def authorize_paypal(request, object_id):
-        sales = Sales.objects.get(pk=object_id)
-        environment = SandboxEnvironment(
-            client_id='AWTbh99Ts8lmshPbMfSB1XNNaSW9cwhNX6dMr-1ubyge1n3UgK4b2e6dtDcqdxcUz1sTO1ihwQsXc76O',
-            client_secret='EMX8JMUA00riKFopJ4ZNB7jbJq5grLyV_DohOUfFAj14nvDb2WhcR7fK2QRw4npzyRNjKmgSYg1sTg0Z')
-        client = PayPalHttpClient(environment)
+    def authorize_paypal(self, request, object_id, merchant_id, *args, **kwargs):
 
-        create_request = OrdersCreateRequest()
-        create_request.prefer("return=representation")
-        create_request.request_body({
-            "intent": "AUTHORIZE",  # Set intent to AUTHORIZE for card authorization
-            "purchase_units": [{
-                "amount": {
-                    "currency_code": "USD",
-                    "value": sales.amount  # You can make this dynamic based on your requirements
-                }
-            }]
-        })
-
-        try:
-            response = client.execute(create_request)
-            order_id = response.result.id
-            return render(request, 'paypal.html', {'order_id': order_id, 'object_id': object_id, 'sales': sales})
-        except Exception as e:
-            print({'error_message': str(e)})
-            return render(request, 'error.html', {'error_message': str(e)})
-    def paypal(self, request, object_id):
         sales = Sales.objects.get(pk=object_id)
         if request.method == 'POST':
             # Verify IPN data with PayPal (optional but recommended)
@@ -169,7 +142,51 @@ class SalesAdmin(admin.ModelAdmin):
             # Return HTTP 200 OK status to acknowledge receipt of IPN
             return HttpResponse(status=200)
         else:
-            environment = SandboxEnvironment(client_id='AWTbh99Ts8lmshPbMfSB1XNNaSW9cwhNX6dMr-1ubyge1n3UgK4b2e6dtDcqdxcUz1sTO1ihwQsXc76O', client_secret='EMX8JMUA00riKFopJ4ZNB7jbJq5grLyV_DohOUfFAj14nvDb2WhcR7fK2QRw4npzyRNjKmgSYg1sTg0Z')
+            client_id = get_merchant_api_key(merchant_id)
+            client_secret = get_merchant_login_key(merchant_id)
+            environment = SandboxEnvironment(client_id=client_id, client_secret=client_secret)
+            client = PayPalHttpClient(environment)
+            # Create PayPal order
+            create_request = OrdersCreateRequest()
+            create_request.prefer("return=representation")
+            create_request.request_body({
+                "intent": "AUTHORIZE",
+                "purchase_units": [{
+                    "amount": {
+                        "currency_code": "USD",
+                        "value": sales.amount  # You can make this dynamic based on your requirements
+                    }
+                }]
+            })
+
+            try:
+                response = client.execute(create_request)
+                order_id = response.result.id
+                ipn_data = request.POST.dict()
+                print("Received PayPal IPN:")
+                print(json.dumps(ipn_data, indent=4))
+                return render(request, 'paypal.html', {'order_id': order_id, 'object_id': object_id, 'sales': sales})
+            except Exception as e:
+                print({'error_message': str(e)})
+                return render(request, 'error.html', {'error_message': str(e)})
+
+    def paypal(self, request, object_id , merchant_id):
+        sales = Sales.objects.get(pk=object_id)
+        if request.method == 'POST':
+            # Verify IPN data with PayPal (optional but recommended)
+            # Process the IPN data
+            ipn_data = request.POST.dict()
+
+            # Perform actions based on the IPN data, such as updating database records
+            # Example: Log IPN data to console
+            print("Received PayPal IPN:")
+            print(json.dumps(ipn_data, indent=4))
+
+            return HttpResponse(status=200)
+        else:
+            client_id = get_merchant_api_key(merchant_id)
+            client_secret = get_merchant_login_key(merchant_id)
+            environment = SandboxEnvironment(client_id=client_id, client_secret=client_secret)
             client = PayPalHttpClient(environment)
             # Create PayPal order
             create_request = OrdersCreateRequest()
@@ -195,7 +212,7 @@ class SalesAdmin(admin.ModelAdmin):
                 print({'error_message': str(e)})
                 return render(request, 'error.html', {'error_message': str(e)})
 
-    def secure(self, request, object_id):
+    def secure(self, request, object_id, merchant_id):
 
         if request.method == 'POST':
             try:
@@ -204,7 +221,7 @@ class SalesAdmin(admin.ModelAdmin):
                 print(json_data)
 
                 fields = {
-                    'security_key': 'P2DZKaQB7y68s7wQ3yMf9Ap4k4APZG5C',
+                    'security_key': get_merchant_api_key(merchant_id),
                     'ccnumber': json_data['cardNumber'],
                     'ccexp': json_data['cardExpMonth'] + json_data['cardExpYear'][-2:],
                     'amount': json_data['amount'],
@@ -264,14 +281,17 @@ class SalesAdmin(admin.ModelAdmin):
         return render(request, "example.html", context)
 
     def my_view(self, request, object_id):
+
         if request.method == 'POST':
             sales = Sales.objects.get(pk=object_id)
             charge_id = request.POST.get('charge_id')
+
             selected_card = sales.cards.filter(card_to_be_used=True).first()
             payment_method = request.POST.get('payment_method')
-            gateway = request.POST.get('gateway')
+            gateway_info = request.POST.get('gateway')
+            gateway_id, gateway = gateway_info.split(",")
+            merchant = request.POST.get('merchant')
             security = request.POST.get("security")
-            print(security)
             amount = sales.amount
             credit_card_number = selected_card.card_no
             cardNumber = credit_card_number.replace(" ", "")
@@ -283,12 +303,17 @@ class SalesAdmin(admin.ModelAdmin):
             address = sales.customer_address
             state = 'NY'
             zip_code = '657899762'
+            merchant_id = Merchants.objects.filter(
+                merchant_link_id=gateway_id,
+                Company_Name__company_name= merchant
+            ).values_list('id', flat=True).first()
             print(payment_method)
+            print(merchant_id)
             if payment_method == 'Sale' and gateway == 'Authorize.net':
                 expirationDate = expirationDate1.strftime("%m%d")
                 xml_response = charge_credit_card(amount, cardNumber, expirationDate, cardCod, firstName, lastName,
                                                   company,
-                                                  address, state, zip_code)
+                                                  address, state, zip_code , merchant_id)
                 # xml_string = ET.tostring(xml_response)
                 return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
 
@@ -296,7 +321,7 @@ class SalesAdmin(admin.ModelAdmin):
                 expirationDate = expirationDate1.strftime("%m%d")
                 xml_response = authorize_credit_card(amount, cardNumber, expirationDate, cardCod, firstName, lastName,
                                                      company,
-                                                     address, state, zip_code)
+                                                     address, state, zip_code ,merchant_id )
                 xml_string = ET.tostring(xml_response)
                 return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
             # **************************  STRIPE  ******************************
@@ -304,8 +329,18 @@ class SalesAdmin(admin.ModelAdmin):
                 try:
                     amount = amount
                     print(amount)
-                    authorize_stripe(amount)
+                    authorize_stripe(amount, merchant_id)
                     # Assuming your view name is 'payment_view' and it expects an 'object_id' parameter
+                    return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
+                except Exception as e:
+                    error_message = "An error occurred: {}".format(e)
+                    print("Error:", error_message)
+                    return JsonResponse({'error': error_message}, status=500)
+            elif payment_method == 'Sale' and gateway == 'Stripe':
+                try:
+                    amount = amount
+                    print(amount)
+                    charge_stripe(amount, merchant_id)
                     return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
                 except Exception as e:
                     error_message = "An error occurred: {}".format(e)
@@ -315,7 +350,7 @@ class SalesAdmin(admin.ModelAdmin):
                 try:
                     expirationDate = expirationDate1.strftime("%m%d")
                     fields = {
-                        'security_key': 'P2DZKaQB7y68s7wQ3yMf9Ap4k4APZG5C',
+                        'security_key': get_merchant_api_key(merchant_id),
                         'amount': amount,
                         'ccnumber': credit_card_number,
                         'ccexp': expirationDate,
@@ -323,7 +358,6 @@ class SalesAdmin(admin.ModelAdmin):
                         'order-description': 'Example Charge',
                         'type': 'auth',
                     }
-                    return fields
                     response = requests.post('https://secure.networkmerchants.com/api/transact.php', data=fields)
                     print("*********************")
                     # Print the response
@@ -337,11 +371,11 @@ class SalesAdmin(admin.ModelAdmin):
                 try:
                     expirationDate = expirationDate1.strftime("%m%d")
                     fields = {
-                        'security_key': 'P2DZKaQB7y68s7wQ3yMf9Ap4k4APZG5C',
+                        'security_key': get_merchant_api_key(merchant_id),
                         'amount': amount,
                         'ccnumber': credit_card_number,
                         'ccexp': expirationDate,
-                        'cvv': '123',
+                        'cvv': '841',
                         'order-description': 'Example Charge',
 
                     }
@@ -356,41 +390,18 @@ class SalesAdmin(admin.ModelAdmin):
                     return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
 
             elif security == '3D' and gateway == 'NMI':
-                print(object_id)
-                return redirect('/admin/Global_Core/sales/{}/payment/3D_secure'.format(object_id))
+                check = get_merchant_login_key(merchant_id)
+                print("****************")
+                print(check)
+                if check is None:
+                    return JsonResponse({'error': 'No GateWay Key'}, status=500)
+                else:
+                    return redirect('/admin/Global_Core/sales/{}/payment/3D_secure/{}'.format(object_id, merchant_id))
 
             elif payment_method == 'Sale' and gateway == 'PayPal':
-                return redirect('/admin/Global_Core/sales/{}/payment/paypal'.format(object_id))
+                return redirect('/admin/Global_Core/sales/{}/payment/paypal/{}'.format(object_id,merchant_id))
             elif payment_method == 'Authorize' and gateway == 'PayPal':
-                return redirect('/admin/Global_Core/sales/{}/payment/authorize_paypal'.format(object_id))
-            elif payment_method == 'Sale' and gateway == 'Square':
-                    square_client = square.Client(access_token=settings.SQUARE_ACCESS_TOKEN)
-
-                    # Handle form submission or other triggers for payment processing
-                    # For example, retrieve the amount from the form data
-                    amount = request.POST.get('amount')
-
-                    try:
-                        # Create a payment using Square API
-                        response = square_client.payments.create({
-                            "source_id": request.POST.get('nonce'),  # Payment nonce generated by Square payment form
-                            "amount_money": {
-                                "amount": amount,
-                                "currency": "USD"
-                            },
-                            "idempotency_key": "<YOUR_IDEMPOTENCY_KEY>"
-                        })
-
-                        # Handle successful payment
-                        if response.is_success():
-                            # Payment successful, update database or display success message
-                            return HttpResponse("Payment successful!")
-                        else:
-                            # Payment failed, display error message
-                            return HttpResponse("Payment failed: " + response.errors)
-                    except square.exceptions.ApiError as e:
-                        # Handle API errors
-                        return HttpResponse("API error: " + str(e))
+                return redirect('/admin/Global_Core/sales/{}/payment/authorize_paypal/{}'.format(object_id, merchant_id))
             else:
                 return JsonResponse({'error': 'Invalid payment method or gateway'})
 
@@ -410,13 +421,13 @@ class SalesAdmin(admin.ModelAdmin):
             selected_card = sales.cards.filter(card_to_be_used=True).first()
             # selected_card = cards_account.objects.filter(card_to_be_used=True).first()
             today_date = datetime.now().date()
-            merchants = Merchants.objects.all()
+            gateway = Gateway.objects.all()
 
             context = {
                 'client_info': customer_info,
                 'today_date': today_date,
                 'cards': selected_card,
-                'merchants': merchants,
+                'gateway': gateway,
                 'object_id': object_id
             }
 
@@ -449,8 +460,8 @@ admin.site.register(Sales, SalesAdmin)
 admin.site.register(Expenses, ExpensesAdmin)
 admin.site.register(Company)
 admin.site.register(Links, LinksAdmin)
-admin.site.register(Accounts)
-admin.site.register(Merchants, MerchantsAdmin)
+admin.site.register(Merchants)
+admin.site.register(Gateway, MerchantsAdmin)
 # admin.site.register(Sales)
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Dashboard)

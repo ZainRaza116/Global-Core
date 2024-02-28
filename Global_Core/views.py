@@ -243,3 +243,16 @@ def square_payment(request):
 
     else:
         return render(request, 'square.html')
+
+
+from .models import *
+
+
+def get_merchants(request):
+
+        gateway_id = request.GET.get('gateway_id')
+        if gateway_id:
+            merchants = Merchants.objects.filter(merchant_link_id=gateway_id).values_list('Company_Name__company_name', flat=True)
+            return JsonResponse(list(merchants), safe=False)
+        else:
+            return JsonResponse([], safe=False)

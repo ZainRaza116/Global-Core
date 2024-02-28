@@ -223,29 +223,89 @@
             </select>
         </div>
                 <div style="display: flex; flex-direction: column; gap: 5px;">
-                    <label style="font-size: 14px;">Gateway</label>
-                    <select class="select-input" name = "gateway">
-                        <option>---Select---</option>
-                        {% for merchant in merchants %}
-                        <option value="{{ merchant }}">{{ merchant }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 5px;">
-                    <label style="font-size: 14px;">Merchant</label>
-                    <select class="select-input">
-                        <option>---Select---</option>
-                        <option>Merchant 1</option>
-                        <option>Merchant 2</option>
-                    </select>
-                </div>
+<label style="font-size: 14px;">Gateway</label>
+<select id="gateway-select" class="select-input" name="gateway">
+    <option value="">---Select---</option>
+    {% for gateway in gateway %}
+        <option value="{{ gateway.id }},{{ gateway.merchant }}">{{ gateway.merchant }}</option>
+    {% endfor %}
+</select>
+
+
+<label style="font-size: 14px;">Merchant</label>
+<select name ="merchant" id="merchant-select" class="select-input">
+    <option  value="">---Select---</option>
+</select>
             </div>
             <div class="btn-box">
                 <button type="submit" onclick={{fn_submit}}>Submit</button>
             </div>
         </div>
     </div>
+    </div>>
 </form>>
+
+<script>
+document.getElementById('gateway-select').addEventListener('change', function() {
+    var merchantSelect = document.getElementById('merchant-select');
+    var selectedValue = this.value;
+    var gatewayId = selectedValue.split(',')[0];
+    var gatewayName = selectedValue.split(',')[1];
+
+    // Clear existing options
+    merchantSelect.innerHTML = '<option value="">---Select---</option>';
+
+    // Fetch merchants for selected gateway using AJAX
+    if (gatewayId) {
+        // Get CSRF token from cookie
+        var csrftoken = getCookie('csrftoken');
+
+        fetch('http://127.0.0.1:8000/get_merchants/?gateway_id=' + gatewayId, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': csrftoken
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Add merchants to select dropdown
+            data.forEach(function(merchant) {
+                var option = document.createElement('option');
+                option.text = merchant;
+                merchantSelect.add(option);
+            });
+        })
+        .catch(error => {
+            console.log('Error fetching merchants:', error);
+        });
+    }
+});
+
+
+    // Function to get CSRF token from cookie
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+
+</script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
 

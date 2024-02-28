@@ -26,7 +26,7 @@ class Dashboard(models.Model):
     pass
 
 
-class Merchants(models.Model):
+class Gateway(models.Model):
     ACCOUNT_CHOICES = [
         ('merchant', 'Merchant'),
         ('Payment_portal', 'Payment Portal'),
@@ -64,7 +64,7 @@ class Expenses(models.Model):
 
 class Links(models.Model):
     merchant_link = models.ForeignKey(
-        Merchants,
+        Gateway,
         on_delete=models.PROTECT,
         verbose_name='Merchant Name',
         default=0,
@@ -138,14 +138,6 @@ class Sales(models.Model):
     # account_fields
 
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, verbose_name='Status', default="pending")
-    merchant = models.ForeignKey(
-        Merchants,
-        on_delete=models.PROTECT,
-        verbose_name='Merchant Name',
-        related_name='sales',
-        default=0,
-
-    )
     reason = models.CharField(max_length=255, verbose_name='Reason', null=True, blank=True)
     description = models.TextField(max_length=255, verbose_name='Description', null=True, blank=True)
     authorization = models.FileField(upload_to='sales_files/', verbose_name='Authorization', blank=True, null=True)
@@ -210,40 +202,39 @@ class Card(models.Model):
 
 
 
-class Accounts(models.Model):
-    merchant_link = models.ForeignKey(
-        Merchants,
-        on_delete=models.PROTECT,
-        verbose_name='Merchant Name',
-        related_name='merchant_accounts',
-        default=0,
-    )
-    DBA = models.ForeignKey(
-        Company,
-        on_delete=models.PROTECT,
-        verbose_name='Company Name',
-        related_name='dba_accounts',
-        default=0,
-    )
-    Type = models.CharField(max_length=255, blank=True, null=True, verbose_name='Type')  # New field for Type
-    Link = models.CharField(max_length=255, blank=False, null=False, verbose_name='Access Link')
-    login = models.CharField(max_length=255, blank=False, null=False, verbose_name='Login ID')
-    password = models.CharField(max_length=255, blank=False, null=False, verbose_name='Password')
-
-    def save(self, *args, **kwargs):
-        if self.merchant_link:
-            self.Type = self.merchant_link.ACCOUNT_CHOICES
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return str(self.merchant_link)
-
 
 class PaymentDetail(models.Model):
     sale = models.OneToOneField(Sales, on_delete=models.CASCADE, related_name='payment_detail')
     merchant_name = models.CharField(max_length=255 , verbose_name='Merchant Name', default=timezone.now)
     amount_paid = models.FloatField(verbose_name='Amount Paid')
 
+class Merchants(models.Model):
+    merchant_link = models.ForeignKey(
+        Gateway,
+        on_delete=models.PROTECT,
+        verbose_name='Merchant Name',
+        related_name='merchant_accounts_link',
+        default=0,
+    )
+    Company_Name = models.ForeignKey(
+        Company,
+        on_delete=models.PROTECT,
+        verbose_name='Company Name',
+        related_name='dba_accounts',
+        default=0,
+    )
+    access_token = models.CharField(
+        max_length=255,
+        blank=False,  # Indicates whether the field is allowed to be blank in forms
+        null=False,  # Indicates whether the field is allowed to be NULL in the database
+        verbose_name='Access Token'
+    )
+    login_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name='Login Id/ Gateway Token'
+    )
 
 # from authorizenet.models import Response
 # from authorizenet.models import CIMResponse as BaseCIMResponse

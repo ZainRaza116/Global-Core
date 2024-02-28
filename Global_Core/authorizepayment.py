@@ -6,22 +6,25 @@ import os
 import sys
 from authorizenet import apicontractsv1
 from authorizenet.apicontrollers import createTransactionController
-
+from .access_api import get_merchant_api_key , get_merchant_login_key
 
 # CONSTANTS = imp.load_source('modulename', 'settings.py')
 merchantAuth = apicontractsv1.merchantAuthenticationType()
-merchantAuth.name = '57njF7yrLVFs'
-merchantAuth.transactionKey = '7z8bY25LdJs7R4Dj'
+# merchantAuth.name = '57njF7yrLVFs'
+# merchantAuth.transactionKey = '7z8bY25LdJs7R4Dj'
 
-def charge_credit_card(amount, cardNumber , expirationDate , cardCod , firstName , lastName , company  , address , state , zip):
+def charge_credit_card(amount, cardNumber , expirationDate , cardCod , firstName , lastName , company  , address , state , zip , merchant_id):
     """
     Charge a credit card
     """
 
     # Create a merchantAuthenticationType object with authentication details
     # retrieved from the constants file
-
-
+    api_key = get_merchant_api_key(merchant_id)
+    name = get_merchant_login_key(merchant_id)
+    merchantAuth.transactionKey = api_key
+    merchantAuth.name = name
+    # merchantAuth.transactionKey = '7z8bY25LdJs7R4Dj'
     # Create the payment data for a credit card
     creditCard = apicontractsv1.creditCardType()
     creditCard.cardNumber = cardNumber
@@ -151,7 +154,7 @@ def charge_credit_card(amount, cardNumber , expirationDate , cardCod , firstName
 #                        "234")
 
 
-def authorize_credit_card(amount, cardNumber , expirationDate , cardCod , firstName , lastName , company  , address , state , zip):
+def authorize_credit_card(amount, cardNumber , expirationDate , cardCod , firstName , lastName , company  , address , state , zip, merchant_id ):
     """
     Authorize a credit card (without actually charging it)
     """
@@ -161,7 +164,10 @@ def authorize_credit_card(amount, cardNumber , expirationDate , cardCod , firstN
     # merchantAuth = apicontractsv1.merchantAuthenticationType()
     # merchantAuth.name = CONSTANTS.apiLoginId
     # merchantAuth.transactionKey = CONSTANTS.transactionKey
-
+    api_key = get_merchant_api_key(merchant_id)
+    name = get_merchant_login_key(merchant_id)
+    merchantAuth.transactionKey = api_key
+    merchantAuth.name = name
     # Create the payment data for a credit card
     creditCard = apicontractsv1.creditCardType()
     creditCard.cardNumber = cardNumber

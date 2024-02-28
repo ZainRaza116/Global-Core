@@ -58,7 +58,7 @@
 
         threeDSecureInterface.on('complete', function (e) {
 
-            fetch('http://127.0.0.1:8000/admin/Global_Core/sales/{{ object_id }}/payment/3D_secure', {
+            fetch('http://127.0.0.1:8000/admin/Global_Core/sales/{{ object_id }}/payment/3D_secure/{{ merchant_id }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

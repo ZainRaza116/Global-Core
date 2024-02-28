@@ -12,9 +12,12 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import os
 from django.conf import settings
 from pathlib import Path
-#
+import sys
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.join(BASE_DIR, 'Global_core'))
 # from dotenv import load_dotenv
 # load_dotenv()
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -142,15 +145,10 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 PAYPAL_TEST = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 AUTHNET_DEBUG = True
-AUTHORIZE_NET_LOGIN_ID = '57njF7yrLVFs'
-AUTHORIZE_NET_TRANSACTION_KEY = '7z8bY25LdJs7R4Dj'
+
 AUTHORIZENET_ENVIRONMENT = 'sandbox'
-
-
-SQUARE_ACCESS_TOKEN = 'EAAAl2z8nouxfGLBcID8kiQYdBwJ4sU54S5UREZhqRuwMvvPg7MjOHHMTkSLMpU-'
-SQUARE_LOCATION_ID = 'L2A4P9RWBX8J2'
-SQUARE_APPLICATION_ID = 'sandbox-sq0idb-YGTPzC7WtzIuYTgHzFtSDg'
 
 
 

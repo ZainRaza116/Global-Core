@@ -9,5 +9,6 @@ urlpatterns = [
     path('create_payment_paypal' , views.create_payment_paypal , name='create_payment_paypal'),
     path('test' , views.test , name='test'),
     # path('nmi', views.NMI, name='NMI')
-    path('square_payment', views.square_payment , name='square_payment')
+    path('square_payment', views.square_payment , name='square_payment'),
+    path("get_merchants/", views.get_merchants, name="get_merchants"),
 ]
