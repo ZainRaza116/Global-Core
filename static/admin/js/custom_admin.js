@@ -1,10 +1,11 @@
-
 document.addEventListener('DOMContentLoaded', function() {
 
-
+    alert("asihuahsu")
     // Function to show/hide fields based on selected payment method
     function toggleFields() {
         var paymentMethod = document.getElementById('id_payment_method').value;
+        console.log(paymentMethod);
+        console.log("paymentMethod");
         // Account fields
         toggleFieldVisibility('account_name', paymentMethod === 'account');
         toggleFieldVisibility('checking_acc', paymentMethod === 'account');
@@ -15,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleFieldVisibility('card_name', paymentMethod === 'card');
         toggleFieldVisibility('billing_address', paymentMethod === 'card');
         toggleFieldVisibility('card_no', paymentMethod === 'card');
-        toggleFieldVisibility('expire_date', paymentMethod === 'card');
+        toggleFieldVisibility('expiry_month', paymentMethod === 'card');
         toggleFieldVisibility('cvv', paymentMethod === 'card');
         toggleFieldVisibility('gift_card', paymentMethod === 'card');
         toggleFieldVisibility('card_to_be_used', paymentMethod === 'card');
@@ -61,6 +62,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Add event listener to the "Add Card" button
     var addCardButton = document.getElementById("add-card-button");
-    addCardButton.addEventListener("click", addCardFields);
+    // addCardButton.addEventListener("click", addCardFields);
 });
 

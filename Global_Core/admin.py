@@ -78,40 +78,45 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.contrib import messages
 from .models import Sales
+from django.forms.models import BaseInlineFormSet
+
+
+class AccountInlineFormSet(BaseInlineFormSet):
+    def clean(self):
+        super().clean()
+        in_use_count = sum(1 for form in self.forms if form.cleaned_data.get('account_to_be_used'))
+        if in_use_count == 0:
+            raise ValidationError("At least one Account must be marked as in use.")
+
+
+class CardInlineFormSet(BaseInlineFormSet):
+    def clean(self):
+        super().clean()
+        in_use_count = sum(1 for form in self.forms if form.cleaned_data.get('card_to_be_used'))
+        if in_use_count == 0:
+            raise ValidationError("At least one card must be marked as in use.")
 
 
 class CardInline(admin.StackedInline):
     model = Card
     extra = 1
+    formset = CardInlineFormSet
 
 
 class BankAccountInline(admin.StackedInline):
     model = BankAccount
     extra = 1
+    forms = AccountInlineFormSet
 
 
 class SalesAdmin(admin.ModelAdmin):
     # inlines = [CardInline, BankAccountInline]
     change_form_template = 'admin/sales/change_form.html'
 
-    def get_inline_instances(self, request, obj=None):
-        if obj is None:  # If adding a new object
-            default_payment_method = 'card'
-            if default_payment_method == 'card':
-                return [CardInline(self.model, self.admin_site)]
-            elif default_payment_method == 'account':
-                return [BankAccountInline(self.model, self.admin_site)]
-            else:
-                return []
+    # class Media:
+    #     js = ('admin/dynamic_inline.js',)
 
-        print("Payment Method:", obj.payment_method)  # Debug print
-
-        if obj.payment_method == 'card':
-            return [CardInline(Card, self.admin_site)]
-        elif obj.payment_method == 'account':
-            return [BankAccountInline(BankAccount, self.admin_site)]
-
-        return []
+    inlines = [CardInline, BankAccountInline]
 
     list_display = ['customer_name', "customer_address", "amount", "payment_method", "added_by" , "custom_action"]
 
@@ -120,7 +125,8 @@ class SalesAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         my_urls = [
             path("<int:object_id>/payment/", self.admin_site.admin_view(self.my_view)),
-            path("<int:object_id>/payment/3D_secure/<int:merchant_id>", self.admin_site.admin_view(self.secure), name="secure"),
+            path("<int:object_id>/payment/3D_secure/<int:merchant_id>", self.admin_site.admin_view(self.secure),
+                 name="secure"),
             path("<int:object_id>/payment/paypal/<int:merchant_id>", self.admin_site.admin_view(self.paypal), name="paypal"),
             path("<int:object_id>/payment/authorize_paypal/<int:merchant_id>", self.admin_site.admin_view(self.authorize_paypal), name="authorize_paypal"),
         ]
@@ -254,9 +260,9 @@ class SalesAdmin(admin.ModelAdmin):
 
         sales = Sales.objects.get(pk=object_id)
         selected_card = sales.cards.filter(card_to_be_used=True).first()
-        expiration_date = selected_card.expire_date
-        expiration_month = expiration_date.strftime("%m")
-        expiration_year = expiration_date.strftime("%Y")
+        # expiration_date = selected_card.expire_date
+        expiration_month = selected_card.expiry_month
+        expiration_year = selected_card.expiry_year
         print(expiration_month, expiration_year)
 
         customer_info = {
@@ -295,7 +301,8 @@ class SalesAdmin(admin.ModelAdmin):
             amount = sales.amount
             credit_card_number = selected_card.card_no
             cardNumber = credit_card_number.replace(" ", "")
-            expirationDate1 = selected_card.expire_date
+            expirationMonth = selected_card.expiry_month
+            expirationYear = selected_card.expiry_year
             cardCod = selected_card.cvv
             firstName = sales.customer_first_name
             lastName = sales.customer_last_name
@@ -310,7 +317,7 @@ class SalesAdmin(admin.ModelAdmin):
             print(payment_method)
             print(merchant_id)
             if payment_method == 'Sale' and gateway == 'Authorize.net':
-                expirationDate = expirationDate1.strftime("%m%d")
+                expirationDate = f"{expirationMonth}/{expirationYear}"
                 xml_response = charge_credit_card(amount, cardNumber, expirationDate, cardCod, firstName, lastName,
                                                   company,
                                                   address, state, zip_code , merchant_id)
@@ -318,7 +325,7 @@ class SalesAdmin(admin.ModelAdmin):
                 return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
 
             elif payment_method == 'Authorize' and gateway == 'Authorize.net':
-                expirationDate = expirationDate1.strftime("%m%d")
+                expirationDate = f"{expirationMonth}/{expirationYear}"
                 xml_response = authorize_credit_card(amount, cardNumber, expirationDate, cardCod, firstName, lastName,
                                                      company,
                                                      address, state, zip_code ,merchant_id )
@@ -348,13 +355,13 @@ class SalesAdmin(admin.ModelAdmin):
                     return JsonResponse({'error': error_message}, status=500)
             elif payment_method == 'Authorize' and gateway == 'NMI':
                 try:
-                    expirationDate = expirationDate1.strftime("%m%d")
+                    expirationDate = f"{expirationMonth}/{expirationYear}"
                     fields = {
                         'security_key': get_merchant_api_key(merchant_id),
                         'amount': amount,
                         'ccnumber': credit_card_number,
                         'ccexp': expirationDate,
-                        'cvv': '123',
+                        'cvv': cardCod,
                         'order-description': 'Example Charge',
                         'type': 'auth',
                     }
@@ -369,13 +376,13 @@ class SalesAdmin(admin.ModelAdmin):
 
             elif security == '2D' and payment_method == 'Sale' and gateway == 'NMI':
                 try:
-                    expirationDate = expirationDate1.strftime("%m%d")
+                    expirationDate = f"{expirationMonth}/{expirationYear}"
                     fields = {
                         'security_key': get_merchant_api_key(merchant_id),
                         'amount': amount,
                         'ccnumber': credit_card_number,
                         'ccexp': expirationDate,
-                        'cvv': '841',
+                        'cvv': cardCod,
                         'order-description': 'Example Charge',
 
                     }
@@ -393,10 +400,10 @@ class SalesAdmin(admin.ModelAdmin):
                 check = get_merchant_login_key(merchant_id)
                 print("****************")
                 print(check)
-                if check is None:
-                    return JsonResponse({'error': 'No GateWay Key'}, status=500)
-                else:
-                    return redirect('/admin/Global_Core/sales/{}/payment/3D_secure/{}'.format(object_id, merchant_id))
+                # if check is None:
+                #     return JsonResponse({'error': 'No GateWay Key'}, status=500)
+                # else:
+                return redirect('/admin/Global_Core/sales/{}/payment/3D_secure/{}'.format(object_id, merchant_id))
 
             elif payment_method == 'Sale' and gateway == 'PayPal':
                 return redirect('/admin/Global_Core/sales/{}/payment/paypal/{}'.format(object_id,merchant_id))
@@ -419,6 +426,16 @@ class SalesAdmin(admin.ModelAdmin):
             }
 
             selected_card = sales.cards.filter(card_to_be_used=True).first()
+            selected_account = sales.Accounts.filter(account_to_be_used=True).first()
+            print(selected_account)
+            if sales.payment_method == 'Account':
+                selected_card= None
+            else:
+                selected_account = sales.Accounts.filter(account_to_be_used=True).first()
+
+            print("*********")
+            print(selected_card)
+
             # selected_card = cards_account.objects.filter(card_to_be_used=True).first()
             today_date = datetime.now().date()
             gateway = Gateway.objects.all()
@@ -427,6 +444,7 @@ class SalesAdmin(admin.ModelAdmin):
                 'client_info': customer_info,
                 'today_date': today_date,
                 'cards': selected_card,
+                'account': selected_account,
                 'gateway': gateway,
                 'object_id': object_id
             }

@@ -6,7 +6,8 @@ from django.contrib.auth.models import PermissionsMixin
 from django.contrib.auth import get_user_model
 from django.core.validators import RegexValidator
 from django.core.exceptions import ValidationError
-
+from localflavor.us.models import USStateField
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 class CustomUser(AbstractUser, PermissionsMixin):
     username = None
@@ -125,6 +126,8 @@ class Sales(models.Model):
     customer_first_name = models.CharField(max_length=255, verbose_name="Customer First Name")
     customer_last_name = models.CharField(max_length=255, verbose_name="Customer Last Name")
     customer_address = models.CharField(max_length=255, verbose_name="Customer Address")
+    state = USStateField(verbose_name='Customer State')
+    zip_code = models.CharField(max_length=255, verbose_name="Zip Code")
     btn = models.CharField(max_length=20, verbose_name='BTN', null=True, blank=True)
     calling_no = models.CharField(max_length=15, verbose_name='Phone Number', null=True, blank=True)
     customer_email = models.EmailField()
@@ -158,6 +161,7 @@ class BankAccount(models.Model):
     routing_no = models.CharField(max_length=20, verbose_name='Routing #', null=True, blank=True)
     checking_no = models.CharField(max_length=20, verbose_name='Checking No', null=True, blank=True)
     account_address = models.CharField(max_length=255, verbose_name='Account Address', null=True, blank=True)
+    account_to_be_used = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Bank Account'
@@ -165,6 +169,20 @@ class BankAccount(models.Model):
 
     def __str__(self):
         return f"Card - {self.account_name}"
+
+    def save(self, *args, **kwargs):
+
+        if self.account_to_be_used:
+            BankAccount.objects.filter(sales=self.sales).exclude(id=self.id).update(account_to_be_used=False)
+        super().save(*args, **kwargs)
+
+
+def validate_credit_card_number(value):
+    cleaned_value = value.replace(' ', '').replace('-', '')
+    if not cleaned_value.isdigit():
+        raise ValidationError('Card number must contain only digits')
+    if not (13 <= len(cleaned_value) <= 19):
+        raise ValidationError('Invalid card number length')
 
 
 class Card(models.Model):
@@ -175,19 +193,43 @@ class Card(models.Model):
     sales = models.ForeignKey(Sales, on_delete=models.CASCADE, related_name='cards')
     card_name = models.CharField(max_length=255, verbose_name='Name on Card', null=True, blank=True)
     billing_address = models.CharField(max_length=255, verbose_name='Billing Address', null=True, blank=True)
-    card_no = models.CharField(max_length=255, verbose_name='Card Number', null=True, blank=True)
-    expire_date = models.DateField(verbose_name='Expire Date', null=True, blank=True)
+    card_no = models.CharField(
+        max_length=255,
+        verbose_name='Card Number',
+        validators=[validate_credit_card_number]
+    )
+    expiry_month = models.IntegerField(
+        verbose_name='Expiry Month',
+        validators=[MinValueValidator(1), MaxValueValidator(12)]
+    )
+    expiry_year = models.IntegerField(
+        verbose_name='Expiry Year',
+        validators=[MinValueValidator(2023)]
+    )
     cvv = models.CharField(max_length=10, verbose_name='CVV', null=True, blank=True)
     gift_card = models.CharField(max_length=10, verbose_name="is it a gift card", choices = GIFT_CARD_OPTION, null=True, blank=True, default="no" )
-    card_to_be_used = models.BooleanField()
+    card_to_be_used = models.BooleanField(default= False)
 
     class Meta:
 
         verbose_name = 'Card'
         verbose_name_plural = 'Cards'
 
+    def clean(self):
+        pass
+
+
     def __str__(self):
         return f"Card - {self.card_no}"
+
+    def save(self, *args, **kwargs):
+
+        if self.card_to_be_used:
+            Card.objects.filter(sales=self.sales).exclude(id=self.id).update(card_to_be_used=False)
+        super().save(*args, **kwargs)
+
+
+
 
     # def clean(self):
     #     # Ensure only one card is set to be used per sales instance
@@ -201,12 +243,11 @@ class Card(models.Model):
     #     super().save(*args, **kwargs)
 
 
-
-
 class PaymentDetail(models.Model):
     sale = models.OneToOneField(Sales, on_delete=models.CASCADE, related_name='payment_detail')
     merchant_name = models.CharField(max_length=255 , verbose_name='Merchant Name', default=timezone.now)
     amount_paid = models.FloatField(verbose_name='Amount Paid')
+
 
 class Merchants(models.Model):
     merchant_link = models.ForeignKey(
