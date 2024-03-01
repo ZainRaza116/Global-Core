@@ -1,0 +1,47 @@
+<!-- sales_chart.html -->
+
+{% extends 'admin/base_site.html' %}
+
+{% block content %}
+    <div>
+        <canvas id="salesChart" width="800" height="400"></canvas>
+    </div>
+{% endblock %}
+
+{% block extrajs %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var ctx = document.getElementById('salesChart').getContext('2d');
+            var salesData = JSON.parse('{{ sales_data_json|escapejs }}');
+
+            var chartData = {
+                labels: salesData.map(sale => sale.date),
+                datasets: [{
+                    label: 'Sales Amount',
+                    data: salesData.map(sale => sale.amount),
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }]
+            };
+
+            var salesChart = new Chart(ctx, {
+                type: 'line',
+                data: chartData,
+                options: {
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+{% endblock %}

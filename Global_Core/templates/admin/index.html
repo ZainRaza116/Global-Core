@@ -1,0 +1,23 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_static %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/dashboard.css" %}">
+{% endblock %}
+dsdsdsdsdsdddddddddddddddddd
+{% block content %}
+    <div id="content-main">
+        {% block breadcrumbs %}
+            <div class="breadcrumbs">
+                <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+            </div>
+        {% endblock %}
+        <div class="app-dashboard">
+            {% block dashboard %}
+            sdsdsd
+                {% include "admin/dashboard.html" %}
+            {% endblock %}
+        </div>
+    </div>
+{% endblock %}

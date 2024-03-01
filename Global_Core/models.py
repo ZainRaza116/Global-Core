@@ -11,6 +11,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 class CustomUser(AbstractUser, PermissionsMixin):
     username = None
+    Name = models.CharField(max_length=255, blank=False, null=False, verbose_name='Name')
     email = models.EmailField(unique=True)
     salary = models.CharField(max_length=255, blank=False, null=False, verbose_name='Salary')
     target = models.CharField(max_length=255, blank=False, null=False, verbose_name='Target')
@@ -276,6 +277,22 @@ class Merchants(models.Model):
         null=True,
         verbose_name='Login Id/ Gateway Token'
     )
+
+
+class Messages(models.Model):
+    added_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    sale = models.ForeignKey(Sales, on_delete=models.CASCADE, related_name='messages')
+    message = models.TextField(verbose_name='Message')
+
+    def save(self, *args, **kwargs):
+        if not self.id:  # If it's a new instance
+            if hasattr(self, 'request'):
+                self.added_by = self.request.user
+        super(Messages, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Card - {self.message}"
 
 # from authorizenet.models import Response
 # from authorizenet.models import CIMResponse as BaseCIMResponse

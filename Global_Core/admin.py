@@ -4,6 +4,8 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
+from django.views.generic import TemplateView
+
 # from stripe._account.Account.Settings import Payments
 from .models import *
 from django.contrib.auth.admin import UserAdmin
@@ -129,8 +131,28 @@ class SalesAdmin(admin.ModelAdmin):
                  name="secure"),
             path("<int:object_id>/payment/paypal/<int:merchant_id>", self.admin_site.admin_view(self.paypal), name="paypal"),
             path("<int:object_id>/payment/authorize_paypal/<int:merchant_id>", self.admin_site.admin_view(self.authorize_paypal), name="authorize_paypal"),
+            path("<int:object_id>/response/",  self.admin_site.admin_view(self.custom_response))
         ]
         return my_urls + urls
+
+    def custom_response(self , request , object_id):
+        if request.method == "POST":
+            message_text = request.POST.get("message")
+            if message_text:
+                sales = Sales.objects.get(pk=object_id)
+                message = Messages.objects.create(added_by=request.user, sale=sales, message=message_text)
+
+        sales = Sales.objects.get(pk=object_id)
+        messages_all = sales.messages.all().order_by('timestamp')
+        response = sales.description
+        print(messages_all)
+        context = {
+            'message': messages_all,
+            'object_id': object_id,
+            'sales': sales,
+            'response': response
+        }
+        return render(request, "response.html", context)
 
     def authorize_paypal(self, request, object_id, merchant_id, *args, **kwargs):
 
@@ -452,26 +474,63 @@ class SalesAdmin(admin.ModelAdmin):
             return render(request, "enter_payment_details.html", context)
 
     def custom_action(self, obj):
+        payment_image_url = '/static/credit-card.png'  # Image for payment action
+        details_image_url = '/static/reply-message.png'  # Image for view details action
+        status_image_url = '/static/loading.png'
+        if obj.status == 'pending' or obj.status == 'in_process':
+            status_html = format_html(
+                '<img src="{}" alt="Status" style="max-height: 20px; max-width: 20px; margin-right: 5px; cursor: pointer;" onclick="alert(\'You want to change your status to Completed?\')" />',
+                status_image_url)
+        else:
+            status_html = format_html(
+                '<a><img src="{}" alt="Status" style="max-height: 20px; max-width: 20px; margin-right: 5px;" /></a>',
 
-        image_url = '/static/credit-card.png'  # Update the image path if needed
+                '/static/complete.png')
+        print(obj.status)
+
+        payment_html = format_html(
+            '<a href="{}"><img src="{}" alt="Payment" style="max-height: 20px; max-width: 20px; margin-right: 5px;" /></a>',
+            f"/admin/Global_Core/sales/{obj.id}/payment/", payment_image_url)
+
+        details_html = format_html(
+            '<a href="{}"><img src="{}" alt="View Details" style="max-height: 20px; max-width: 20px; margin-right: 5px;" /></a>',
+            f"/admin/Global_Core/sales/{obj.id}/response/", details_image_url)
+
+
         return format_html(
-            '<a href="{}"><div style="max-height: 20px; max-width: 20px;'
-            ' overflow: hidden;"><img src="{}" alt="Credit Card Logo" style="width: 100%; height: auto;" /></div></a>',
-            f"/admin/Global_Core/sales/{obj.id}/payment/", image_url)
+            '<div style="display: flex;">'
+            '{}{}{}'
+            '</div>',
+            payment_html, details_html, status_html)
+
+
+
 
     custom_action.short_description = 'Actions'
 
 
-class MyAdminSite(AdminSite):
-    def get_urls(self):
-        urls = super().get_urls()
-        custom_urls = [
-            path('enter_payment_details/<int:sales_id>/', self.enter_payment_details, name='enter_payment_details'),
-        ]
-        return custom_urls + urls
+    class Media:
+        js = (
+            'admin/js/status_popup.js',
+        )
 
 
-my_admin_site = MyAdminSite()
+class DashboardAdmin(admin.ModelAdmin):
+    class SalesChartDataView(TemplateView):
+        template_name = 'sales_chart.html'
+
+        def get_context_data(self, **kwargs):
+            context = super().get_context_data(**kwargs)
+            # Fetch sales data (you may need to adjust this query based on your models)
+            sales_data = Sales.objects.all().values('date', 'amount')
+            # Convert QuerySet to a list of dictionaries
+            sales_data_list = list(sales_data)
+            # Convert date to string for JSON serialization
+            for sale in sales_data_list:
+                sale['date'] = sale['date'].strftime('%Y-%m-%d')
+            # Add sales data to the context
+            context['sales_data_json'] = json.dumps(sales_data_list)
+            return context
 
 
 admin.site.register(Sales, SalesAdmin)
@@ -482,5 +541,5 @@ admin.site.register(Merchants)
 admin.site.register(Gateway, MerchantsAdmin)
 # admin.site.register(Sales)
 admin.site.register(CustomUser, CustomUserAdmin)
-admin.site.register(Dashboard)
+admin.site.register(Dashboard, DashboardAdmin)
 # admin.site.register(urls)

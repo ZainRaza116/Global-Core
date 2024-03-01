@@ -330,34 +330,40 @@
                     </p>
                 </div>
                             {% if account %}
-            <div class="header-right" style="display: flex; flex-direction: column; align-items: end;">
-                <p style="font-size: 20px; font-weight: 600; margin-right: 40px">Account Detail</p>
-                <div class="header-right-box">
-                    <p style="font-size: 14px; margin-top: 10px;">
-                        <b>Account Name: </b>{{ account.account_name }}
-                    </p>
-                    <p style="font-size: 14px;">
-                        <b>Checking Account: </b>{{ account.checking_acc }}
-                    </p>
-                    <p style="font-size: 14px;">
-                        <b>Routing #: </b>{{ account.routing_no }}
-                    </p>
-                    <p style="font-size: 14px;">
-                        <b>Checking No: </b>{{ account.checking_no }}
-                    </p>
-                    <p style="font-size: 14px;">
-                        <b>Account Address: </b>{{ account.account_address }}
-                    </p>
+                <div class="header-right" style="display: flex; flex-direction: column; align-items: end;">
+                    <p style="font-size: 20px; font-weight: 600; margin-right: 40px">Account Detail</p>
+                    <div class="header-right-box">
+                        <p style="font-size: 14px; margin-top: 10px;">
+                            <b>Account Name: </b>{{ account.account_name }}
+                        </p>
+                        <p style="font-size: 14px;">
+                            <b>Checking Account: </b>{{ account.checking_acc }}
+                        </p>
+                        <p style="font-size: 14px;">
+                            <b>Routing #: </b>{{ account.routing_no }}
+                        </p>
+                        <p style="font-size: 14px;">
+                            <b>Checking No: </b>{{ account.checking_no }}
+                        </p>
+                        <p style="font-size: 14px;">
+                            <b>Account Address: </b>{{ account.account_address }}
+                        </p>
+                    </div>
                 </div>
-            </div>
-                            <div class="content1">
-                <div>
-                    <p style="font-size: 14px; font-weight: 600;"></p>
+
+
+
+                <div class="content1">
+                    <div>
+                        <p style="font-size: 14px; font-weight: 600;"></p>
+                    </div>
+                    <div>
+                        <p style="font-size: 14px; font-weight: 600;">${{ client_info.amount }}</p>
+                    </div>
                 </div>
-                <div>
-                    <p style="font-size: 14px; font-weight: 600;">${{ client_info.amount }}</p>
-                </div>
-            </div>
+
+
+
             <div class="content2">
                 <div class="amount">
                     <p style="font-size: 14px;">Amount Due</p>
@@ -444,20 +450,20 @@
 
 </form>
 
-<section class="c-container">
+<!--<section class="c-container">-->
 
-  <div class="o-circle c-container__circle o-circle__sign--success">
-    <div class="o-circle__sign"></div>
-  </div>
-    <div style="text-align: center">Transaction Successfull !</div>
+<!--  <div class="o-circle c-container__circle o-circle__sign&#45;&#45;success">-->
+<!--    <div class="o-circle__sign"></div>-->
+<!--  </div>-->
+<!--    <div style="text-align: center">Transaction Successfull !</div>-->
 
-  <div class="o-circle c-container__circle o-circle__sign--failure">
-    <div class="o-circle__sign"></div>
-  </div>
+<!--  <div class="o-circle c-container__circle o-circle__sign&#45;&#45;failure">-->
+<!--    <div class="o-circle__sign"></div>-->
+<!--  </div>-->
 
-    <div style="text-align: center">Transaction Fail !</div>
+<!--    <div style="text-align: center">Transaction Fail !</div>-->
 
-</section>
+<!--</section>-->
     {% endif %}
 <script>
 document.getElementById('gateway-select').addEventListener('change', function() {
