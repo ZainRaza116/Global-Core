@@ -11,4 +11,5 @@ urlpatterns = [
     # path('nmi', views.NMI, name='NMI')
     path('square_payment', views.square_payment , name='square_payment'),
     path("get_merchants/", views.get_merchants, name="get_merchants"),
+    path('admin/Global_Core/sales/<int:object_id>/details/', views.get_details_view, name='get_details'),
 ]

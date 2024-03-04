@@ -1,7 +1,7 @@
 from django.contrib import admin
 import requests
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.views.generic import TemplateView
@@ -111,6 +111,7 @@ class BankAccountInline(admin.StackedInline):
     forms = AccountInlineFormSet
 
 
+
 class SalesAdmin(admin.ModelAdmin):
     # inlines = [CardInline, BankAccountInline]
     change_form_template = 'admin/sales/change_form.html'
@@ -129,11 +130,16 @@ class SalesAdmin(admin.ModelAdmin):
             path("<int:object_id>/payment/", self.admin_site.admin_view(self.my_view)),
             path("<int:object_id>/payment/3D_secure/<int:merchant_id>", self.admin_site.admin_view(self.secure),
                  name="secure"),
-            path("<int:object_id>/payment/paypal/<int:merchant_id>", self.admin_site.admin_view(self.paypal), name="paypal"),
-            path("<int:object_id>/payment/authorize_paypal/<int:merchant_id>", self.admin_site.admin_view(self.authorize_paypal), name="authorize_paypal"),
-            path("<int:object_id>/response/",  self.admin_site.admin_view(self.custom_response))
+            path("<int:object_id>/payment/paypal/<int:merchant_id>", self.admin_site.admin_view(self.paypal),
+                 name="paypal"),
+            path("<int:object_id>/payment/authorize_paypal/<int:merchant_id>",
+                 self.admin_site.admin_view(self.authorize_paypal), name="authorize_paypal"),
+            path("<int:object_id>/response/",  self.admin_site.admin_view(self.custom_response)),
+            path("details/", self.admin_site.admin_view(self.get_details_view),
+                 name="get_details_view")
         ]
         return my_urls + urls
+
 
     def custom_response(self , request , object_id):
         if request.method == "POST":
@@ -311,12 +317,14 @@ class SalesAdmin(admin.ModelAdmin):
     def my_view(self, request, object_id):
 
         if request.method == 'POST':
+
             sales = Sales.objects.get(pk=object_id)
             charge_id = request.POST.get('charge_id')
 
             selected_card = sales.cards.filter(card_to_be_used=True).first()
             payment_method = request.POST.get('payment_method')
             gateway_info = request.POST.get('gateway')
+            print(gateway_info , payment_method)
             gateway_id, gateway = gateway_info.split(",")
             merchant = request.POST.get('merchant')
             security = request.POST.get("security")
@@ -461,7 +469,6 @@ class SalesAdmin(admin.ModelAdmin):
             # selected_card = cards_account.objects.filter(card_to_be_used=True).first()
             today_date = datetime.now().date()
             gateway = Gateway.objects.all()
-
             context = {
                 'client_info': customer_info,
                 'today_date': today_date,
@@ -472,6 +479,43 @@ class SalesAdmin(admin.ModelAdmin):
             }
 
             return render(request, "enter_payment_details.html", context)
+
+
+    def get_details_view(self, request):
+        try:
+            object_id = request.GET.get('objectId')
+            sales = Sales.objects.get(pk=object_id)
+            customer_info = {
+                'customer_name': sales.customer_name,
+                'customer_address': sales.customer_address,
+                'customer_email': sales.customer_email,
+                'amount': sales.amount
+            }
+
+            security_option = request.GET.get('security')
+            payment_method = request.GET.get('payment_method')
+            gateway = request.GET.get('gateway', '')
+            merchant = request.GET.get('merchant')
+            today_date = datetime.now().date()
+            selected_card = sales.cards.filter(card_to_be_used=True).first()
+            selected_account = sales.Accounts.filter(account_to_be_used=True).first()
+            context = {
+                'client_info': customer_info,
+                'today_date': today_date,
+                'cards': selected_card,
+                'account': selected_account,
+                'object_id': object_id,
+                'security_option': security_option,
+                'payment_method': payment_method,
+                'gateway': gateway,
+                'merchant': merchant
+            }
+
+            return render(request, 'enter_payment_details.html', context)
+        except Sales.DoesNotExist:
+            return JsonResponse({'error': 'Sales object does not exist'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
 
     def custom_action(self, obj):
         payment_image_url = '/static/credit-card.png'  # Image for payment action
@@ -487,6 +531,7 @@ class SalesAdmin(admin.ModelAdmin):
 
                 '/static/complete.png')
         print(obj.status)
+
 
         payment_html = format_html(
             '<a href="{}"><img src="{}" alt="Payment" style="max-height: 20px; max-width: 20px; margin-right: 5px;" /></a>',

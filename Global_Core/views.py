@@ -1,6 +1,6 @@
 import requests
 import json
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from .authorizepayment import authorize_credit_card, charge_credit_card
 import lxml.etree as ET
@@ -256,3 +256,25 @@ def get_merchants(request):
             return JsonResponse(list(merchants), safe=False)
         else:
             return JsonResponse([], safe=False)
+
+
+def get_details_view(request, object_id):
+    try:
+        sales = get_object_or_404(Sales, pk=object_id)
+        security_option = request.GET.get('security')
+        payment_method = request.GET.get('payment_method')
+        gateway = request.GET.get('gateway')
+        merchant = request.GET.get('merchant')
+
+        details = {
+            'object_id': object_id,
+            'security_option': security_option,
+            'payment_method': payment_method,
+            'gateway': gateway,
+            'merchant': merchant
+        }
+        return JsonResponse(details)
+    except Sales.DoesNotExist:
+        return JsonResponse({'error': 'Sales object does not exist'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

@@ -351,7 +351,7 @@
                     </div>
                 </div>
 
-
+            </div>
 
                 <div class="content1">
                     <div>
@@ -361,9 +361,6 @@
                         <p style="font-size: 14px; font-weight: 600;">${{ client_info.amount }}</p>
                     </div>
                 </div>
-
-
-
             <div class="content2">
                 <div class="amount">
                     <p style="font-size: 14px;">Amount Due</p>
@@ -371,7 +368,6 @@
                 </div>
             </div>
             {% else %}
-
                      {{ cards_data.card_no }}
                 <div class="header-right" style="display: flex; flex-direction: column; align-items: end;">
                     <p style="font-size: 20px; font-weight: 600; margin-right: 40px">Account Detail</p>
@@ -403,6 +399,8 @@
                     <p style="font-size: 14px; font-weight: 600;">${{ client_info.amount }}</p>
                 </div>
             </div>
+
+<!--            NORMAL CONTENT-->
             <div class="content2">
                 <div class="amount">
                     <p style="font-size: 14px;">Amount Due</p>
@@ -411,42 +409,61 @@
             </div>
             <div class="content3">
                 <div style="display: flex; flex-direction: column; gap: 5px;">
+                        {% if security_option %}
+                    <p>Security Option: <span id="security_option">{{ security_option }}</span></p>
+                    {% else %}
+
             <label style="font-size: 14px;">Security Option</label>
             <div style="font-size: 14px;">
                 <label><input type="radio" name="security" value="2D" checked>&nbsp;2D secure</label>
                 <label><input type="radio" name="security" value="3D">&nbsp;3D secure</label>
             </div>
         </div>
+                  {% endif %}
         <div style="display: flex; flex-direction: column; gap: 5px;">
-            <label style="font-size: 14px;">Sale/Authorize</label>
-            <select id="sale-authorize-select" class="select-input" name = "payment_method">
-                <option>Sale</option>
-                <option>Authorize</option>
-            </select>
-        </div>
-                <div style="display: flex; flex-direction: column; gap: 5px;">
-<label style="font-size: 14px;">Gateway</label>
-<select id="gateway-select" class="select-input" name="gateway">
-    <option value="">---Select---</option>
-    {% for gateway in gateway %}
-        <option value="{{ gateway.id }},{{ gateway.merchant }}">{{ gateway.merchant }}</option>
-    {% endfor %}
-</select>
-            </div>
+<label style="font-size: 14px;">Sale/Authorize</label>
+{% if payment_method %}
+    <p name="payment_method"><span id="payment_method">{{ payment_method }}</span></p>
+{% else %}
+    <select id="sale-authorize-select" class="select-input" name="payment_method">
+        <option value="Sale">Sale</option>
+        <option value="Authorize">Authorize</option>
+    </select>
+{% endif %}
+<div style="display: flex; flex-direction: column; gap: 5px;">
+    <label style="font-size: 14px;">Gateway</label>
+    {% if gateway %}
+        <p name="gateway"><span id="gateway"  >{{ gateway }}</span></p>
+    {% else %}
+        <select id="gateway-select" class="select-input" name="gateway">
+            <option value="">---Select---</option>
+            {% for gateway_option in gateway %}
+                <option value="{{ gateway_option.id }},{{ gateway_option.merchant }}">{{ gateway_option.merchant }}</option>
+            {% endfor %}
+        </select>
+    {% endif %}
+</div>
                  <div style="display: flex; flex-direction: column; gap: 5px;">
 
 
 <label style="font-size: 14px;">Merchant</label>
+                      {% if merchant %}
+                       <p><span name = "gateway" id="merchant">{{ merchant }}</span></p>
+                       {% else %}
 <select name ="merchant" id="merchant-select" class="select-input">
     <option  value="">---Select---</option>
 </select>
+                       {% endif %}
             </div>
             <div class="btn-box">
                 <button type="submit" onclick={{fn_submit}}>Submit</button>
+                  <button id="getDetailsButton" type="submit">Get Details</button>
             </div>
+
         </div>
     </div>
     </div>
+
 
 </form>
 
@@ -465,6 +482,7 @@
 
 <!--</section>-->
     {% endif %}
+
 <script>
 document.getElementById('gateway-select').addEventListener('change', function() {
     var merchantSelect = document.getElementById('merchant-select');
@@ -526,6 +544,30 @@ document.getElementById('gateway-select').addEventListener('change', function() 
 
 
 </script>
+
+<script>
+document.getElementById('getDetailsButton').addEventListener('click', function() {
+    event.preventDefault();
+    // Gather form data
+    const securityOption = document.querySelector('input[name="security"]:checked').value;
+    const paymentMethod = document.getElementById('sale-authorize-select').value;
+    const gateway = document.getElementById('gateway-select').value;
+    const merchant = document.getElementById('merchant-select').value;
+    const objectId = '{{ object_id }}';
+    console.log(objectId)
+    fetch(`http://127.0.0.1:8000/admin/Global_Core/sales/details/?objectId=${objectId}&security=${securityOption}&payment_method=${paymentMethod}&gateway=${gateway}&merchant=${merchant}`)
+
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+        })
+        .catch(error => {
+            console.error('Error fetching details:', error);
+
+        });
+});
+</script>
+
 <script>
     document.addEventListener("DOMContentLoaded", function() {
 
