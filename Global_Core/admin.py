@@ -315,21 +315,28 @@ class SalesAdmin(admin.ModelAdmin):
         return render(request, "example.html", context)
 
     def my_view(self, request, object_id):
-
+        # print(request.body)
+        # return redirect('/admin/Global_Core/sales/{}/payment/')
         if request.method == 'POST':
-
+            data = json.loads(request.body)
+            print("2323232")
+            print(data)
+            print(request.body)
             sales = Sales.objects.get(pk=object_id)
-            charge_id = request.POST.get('charge_id')
+            # charge_id = request.POST.get('chargeId')
 
             selected_card = sales.cards.filter(card_to_be_used=True).first()
-            payment_method = request.POST.get('payment_method')
-            gateway_info = request.POST.get('gateway')
-            print(gateway_info , payment_method)
-            gateway_id, gateway = gateway_info.split(",")
-            merchant = request.POST.get('merchant')
-            security = request.POST.get("security")
+            merchant = data.get('merchant')
+            security = data.get('security')
+            print("______________")
+            print(security, merchant)
             amount = sales.amount
             credit_card_number = selected_card.card_no
+            payment_method = data.get('payment_method')
+
+            gateway_info = data.get('gateway')
+            gateway_id, gateway = gateway_info.split(",")
+
             cardNumber = credit_card_number.replace(" ", "")
             expirationMonth = selected_card.expiry_month
             expirationYear = selected_card.expiry_year
@@ -340,6 +347,7 @@ class SalesAdmin(admin.ModelAdmin):
             address = sales.customer_address
             state = 'NY'
             zip_code = '657899762'
+
             merchant_id = Merchants.objects.filter(
                 merchant_link_id=gateway_id,
                 Company_Name__company_name= merchant
@@ -491,7 +499,6 @@ class SalesAdmin(admin.ModelAdmin):
                 'customer_email': sales.customer_email,
                 'amount': sales.amount
             }
-
             security_option = request.GET.get('security')
             payment_method = request.GET.get('payment_method')
             gateway = request.GET.get('gateway', '')
@@ -499,6 +506,7 @@ class SalesAdmin(admin.ModelAdmin):
             today_date = datetime.now().date()
             selected_card = sales.cards.filter(card_to_be_used=True).first()
             selected_account = sales.Accounts.filter(account_to_be_used=True).first()
+
             context = {
                 'client_info': customer_info,
                 'today_date': today_date,
@@ -512,6 +520,7 @@ class SalesAdmin(admin.ModelAdmin):
             }
 
             return render(request, 'enter_payment_details.html', context)
+
         except Sales.DoesNotExist:
             return JsonResponse({'error': 'Sales object does not exist'}, status=404)
         except Exception as e:
