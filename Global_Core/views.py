@@ -2,6 +2,8 @@ import requests
 import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
+from django.utils.datetime_safe import datetime
+
 from .authorizepayment import authorize_credit_card, charge_credit_card
 import lxml.etree as ET
 from .tests import gwapi
@@ -258,23 +260,45 @@ def get_merchants(request):
             return JsonResponse([], safe=False)
 
 
-def get_details_view(request, object_id):
-    try:
-        sales = get_object_or_404(Sales, pk=object_id)
-        security_option = request.GET.get('security')
-        payment_method = request.GET.get('payment_method')
-        gateway = request.GET.get('gateway')
-        merchant = request.GET.get('merchant')
+# def get_details_view(request, object_id):
+#     try:
+#         sales = get_object_or_404(Sales, pk=object_id)
+#         security_option = request.GET.get('security')
+#         payment_method = request.GET.get('payment_method')
+#         gateway = request.GET.get('gateway')
+#         merchant = request.GET.get('merchant')
+#
+#         details = {
+#             'invoice_id': invoice_id,
+#             'object_id': object_id,
+#             'security_option': security_option,
+#             'payment_method': payment_method,
+#             'gateway': gateway,
+#             'merchant': merchant
+#         }
+#         return JsonResponse(details)
+#     except Sales.DoesNotExist:
+#         return JsonResponse({'error': 'Sales object does not exist'}, status=404)
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
 
-        details = {
-            'object_id': object_id,
-            'security_option': security_option,
-            'payment_method': payment_method,
-            'gateway': gateway,
-            'merchant': merchant
-        }
-        return JsonResponse(details)
-    except Sales.DoesNotExist:
-        return JsonResponse({'error': 'Sales object does not exist'}, status=404)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+def invoice(request, invoice_id):
+    invoice_object = get_object_or_404(Invoice, pk=invoice_id)
+    gateway = invoice_object.gateway.split(',')[1]
+
+    sale_object = invoice_object.sale
+    selected_card = sale_object.cards.filter(card_to_be_used=True).first()
+    date = datetime.now().date()
+    sale_id = sale_object.id
+
+    contex = {
+        "object_id" : sale_id,
+        "gateway": gateway,
+        "invoice_id": invoice_id,
+        "invoice_object": invoice_object,
+        "date": date,
+        'sale': sale_object,
+        'cards': selected_card
+    }
+    return render(request, 'invoice.html', contex)
+

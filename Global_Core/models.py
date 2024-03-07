@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 from localflavor.us.models import USStateField
 from django.core.validators import MinValueValidator, MaxValueValidator
 
+
 class CustomUser(AbstractUser, PermissionsMixin):
     username = None
     Name = models.CharField(max_length=255, blank=False, null=False, verbose_name='Name')
@@ -294,6 +295,13 @@ class Messages(models.Model):
     def __str__(self):
         return f"Card - {self.message}"
 
+
+class Invoice(models.Model):
+    sale = models.ForeignKey(Sales, on_delete=models.CASCADE, related_name='Invoice')
+    payment = models.CharField(max_length=255, verbose_name='Payment Method')
+    security = models.CharField(max_length=255, verbose_name='Security')
+    gateway = models.CharField(max_length=255, verbose_name='Gateway')
+    Merchant_Name = models.CharField(max_length=255, verbose_name='Merchant')
 # from authorizenet.models import Response
 # from authorizenet.models import CIMResponse as BaseCIMResponse
 #

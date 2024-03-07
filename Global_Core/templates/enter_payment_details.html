@@ -8,6 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <link href="https://netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
     <style>
         *{
     padding: 0;
@@ -28,6 +29,7 @@
     width: 70%;
     box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
     padding: 50px 0;
+    position: relative;
 }
 
 .invoice .header{
@@ -130,9 +132,22 @@
     scale: 0.98;
 }
 
+.invoice .btn-box #getDetailsButton {
+            height: max-content;
+            border-bottom: 1px solid #4D66F1;
+            color: #4D66F1;
+            position: absolute;
+            right: 50px;
+        }
+
+        .invoice .btn-box .icon-link {
+            margin-top: 5px !important;
+        }
+
 .header-right-box{
     width: max-content !important;
 }
+
 
 
 @media screen and (max-width: 950px) {
@@ -311,16 +326,11 @@
 }
     </style>
 </head>
-
-<script>
-    var valueOfGateway = false;
-    console.log(gateway)
-</script>
-<!--<form id="paymentForm" method="POST" action="/admin/Global_Core/sales/{{ object_id }}/payment/">-->
-<!--    {% csrf_token %}-->
+<form id="paymentForm" method="POST" action="/admin/Global_Core/sales/{{ object_id }}/payment/">
+    {% csrf_token %}
     <div class="main">
         <div class="invoice">
-            <div class="header">g
+            <div class="header">
                 <div style="display: flex; flex-direction: column; gap: 5px">
                     <p style="font-size: 20px; font-weight: 600;">Personal Detail</p>
                     <p style="font-size: 14px; margin-top: 10px;">
@@ -415,46 +425,39 @@
             <div class="content3">
                 <div style="display: flex; flex-direction: column; gap: 5px;">
                         {% if security_option %}
-                    <p name="security">Security Option: <span id="security_option">{{ security_option }}</span></p>
+                    <p>Security Option: <span id="security_option">{{ security_option }}</span></p>
                     {% else %}
 
             <label style="font-size: 14px;">Security Option</label>
             <div style="font-size: 14px;">
-                <label><input type="radio" id="2d" name="security" value="2D" checked>&nbsp;2D secure</label>
-                <label><input type="radio" id="3d" name="security" value="3D">&nbsp;3D secure</label>
+                <label><input type="radio" name="security" value="2D" checked>&nbsp;2D secure</label>
+                <label><input type="radio" name="security" value="3D">&nbsp;3D secure</label>
             </div>
-                     {% endif %}
         </div>
-
-<div style="display: flex; flex-direction: column; gap: 5px;">
-    <label style="font-size: 14px;">Sale/Authorize</label>
-    {% if payment_method %}
-        <p name="payment_method"><span id="payment_method">{{ payment_method }}</span></p>
-    {% else %}
-        <select id="sale-authorize-select" class="select-input" name="payment_method">
+                  {% endif %}
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+<label style="font-size: 14px;">Sale/Authorize</label>
+{% if payment_method %}
+    <p name="payment_method"><span id="payment_method">{{ payment_method }}</span></p>
+{% else %}
+    <select id="sale-authorize-select" class="select-input" name="payment_method">
         <option value="Sale">Sale</option>
         <option value="Authorize">Authorize</option>
     </select>
-    {% endif %}
-</div>
+        </div>
+{% endif %}
+<div style="display: flex; flex-direction: column; gap: 5px;">
+    <label style="font-size: 14px;">Gateway</label>
 
-{% if not gateway %}
-    <div style="display: flex; flex-direction: column; gap: 5px;">
-        <label style="font-size: 14px;">Gateway</label>
         <select id="gateway-select" class="select-input" name="gateway">
             <option value="">---Select---</option>
             {% for gateway_option in gateway %}
                 <option value="{{ gateway_option.id }},{{ gateway_option.merchant }}">{{ gateway_option.merchant }}</option>
             {% endfor %}
         </select>
-    </div>
-{% else %}
-    <div>
-        <p><span id="gatewayg" name="gateway">{{ gateway }}</span></p>
-    </div>
-{% endif %}
-                <div style="display: flex; flex-direction: column; gap: 5px;">
 
+</div>
+                 <div style="display: flex; flex-direction: column; gap: 5px;">
 
 <label style="font-size: 14px;">Merchant</label>
                       {% if merchant %}
@@ -465,16 +468,33 @@
 </select>
                        {% endif %}
             </div>
-            <div class="btn-box">
-             <button type="submit" onclick="submitForm()">Submit</button>
 
-                  <button id="getDetailsButton" type="submit">Get Details</button>
+
+        </div>
+
+        <div class="btn-box">
+                <button type="submit" onclick={{fn_submit}}>Submit</button>
+            <a id="getDetailsButton" type="submit"><i class="icon-link"></i>
+                Generate Link</a>
+            </div>
+
+        <div class="toast-container position-fixed top-0 end-0 p-3">
+            <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header bg-primary">
+                    <strong class="me-auto text-light">Notification</strong>
+                    <small class="text-light">0 mins ago</small>
+                    <button type="button" class="btn-close text-light" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    Link Copied Successfully
+                </div>
             </div>
         </div>
     </div>
     </div>
 
-<!--</form>-->
+
+</form>
 
 <!--<section class="c-container">-->
 
@@ -491,52 +511,19 @@
 
 <!--</section>-->
     {% endif %}
-    <script>
-    function submitForm() {
-        const securityOptionValue = document.querySelector('span#security_option').innerText;
-        const merchantValue = document.querySelector('span#merchant').innerText;
-        const gatewayValue = document.querySelector('span#gateway').innerText;
-        const saleValue = document.querySelector('span#payment_method').innerText;
-
-        const data = {};
-        data.security = securityOptionValue;
-        data.merchant = merchantValue;
-        data.gateway = gatewayValue;
-        data.payment_method = saleValue;
-        console.log(data)
-        const csrftoken = getCookie('csrftoken');
-
-        fetch('http://127.0.0.1:8000/admin/Global_Core/sales/ {{ object_id }} /payment/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrftoken,
-            },
-            body: JSON.stringify(data)
-        }).then((res) => console.log("res", res));
-    }
-
-    // Function to get the CSRF token from cookies
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-</script>
 
 <script>
+    const toastTrigger = document.getElementById('getDetailsButton')
+    const toastLiveExample = document.getElementById('liveToast')
+    if (toastTrigger) {
+        toastTrigger.addEventListener('click', () => {
+            const toast = new bootstrap.Toast(toastLiveExample)
 
+            toast.show()
+        })
+    }
 document.getElementById('gateway-select').addEventListener('change', function() {
-var merchantSelect = document.getElementById('merchant-select');
+    var merchantSelect = document.getElementById('merchant-select');
     var selectedValue = this.value;
     var gatewayId = selectedValue.split(',')[0];
     var gatewayName = selectedValue.split(',')[1];
@@ -599,26 +586,34 @@ var merchantSelect = document.getElementById('merchant-select');
 <script>
 document.getElementById('getDetailsButton').addEventListener('click', function() {
     event.preventDefault();
-    // Gather form data
     const securityOption = document.querySelector('input[name="security"]:checked').value;
     const paymentMethod = document.getElementById('sale-authorize-select').value;
     const gateway = document.getElementById('gateway-select').value;
     const merchant = document.getElementById('merchant-select').value;
     const objectId = '{{ object_id }}';
-    console.log(gateway)
-
+    console.log(objectId)
     fetch(`http://127.0.0.1:8000/admin/Global_Core/sales/details/?objectId=${objectId}&security=${securityOption}&payment_method=${paymentMethod}&gateway=${gateway}&merchant=${merchant}`)
-
         .then(response => response.json())
         .then(data => {
             console.log(data);
+            const invoiceId = data.invoice_id;
+            console.log(invoiceId);
+
+            // Copy invoice ID to clipboard
+            const el = document.createElement('textarea');
+            el.value = invoiceId;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            window.location.href = `http://127.0.0.1:8000/customer_invoice/${invoiceId}/`;
         })
         .catch(error => {
             console.error('Error fetching details:', error);
-
         });
 });
 </script>
+
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -644,3 +639,7 @@ document.getElementById('getDetailsButton').addEventListener('click', function()
 </body>
 </html>
 {% endblock %}
+
+
+
+

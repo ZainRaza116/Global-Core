@@ -4,6 +4,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 
 # from stripe._account.Account.Settings import Payments
@@ -314,27 +315,21 @@ class SalesAdmin(admin.ModelAdmin):
         # Render the template with the context and return an HttpResponse object
         return render(request, "example.html", context)
 
+    @csrf_exempt
     def my_view(self, request, object_id):
-        # print(request.body)
-        # return redirect('/admin/Global_Core/sales/{}/payment/')
-        if request.method == 'POST':
-            data = json.loads(request.body)
-            print("2323232")
-            print(data)
-            print(request.body)
+        if request.method == "POST":
             sales = Sales.objects.get(pk=object_id)
-            # charge_id = request.POST.get('chargeId')
-
+            charge_id = request.POST.get('chargeId')
             selected_card = sales.cards.filter(card_to_be_used=True).first()
-            merchant = data.get('merchant')
-            security = data.get('security')
+            merchant =request.POST.get('merchant')
+            security = request.POST.get('security')
             print("______________")
             print(security, merchant)
             amount = sales.amount
             credit_card_number = selected_card.card_no
-            payment_method = data.get('payment_method')
+            payment_method = request.POST.get('payment_method')
 
-            gateway_info = data.get('gateway')
+            gateway_info = request.POST.get('gateway')
             gateway_id, gateway = gateway_info.split(",")
 
             cardNumber = credit_card_number.replace(" ", "")
@@ -347,7 +342,13 @@ class SalesAdmin(admin.ModelAdmin):
             address = sales.customer_address
             state = 'NY'
             zip_code = '657899762'
-
+            invoice = Invoice.objects.create(
+                sale=sales,
+                payment=payment_method,
+                security=security,
+                gateway=gateway,
+                Merchant_Name=merchant
+            )
             merchant_id = Merchants.objects.filter(
                 merchant_link_id=gateway_id,
                 Company_Name__company_name= merchant
@@ -491,6 +492,7 @@ class SalesAdmin(admin.ModelAdmin):
 
     def get_details_view(self, request):
         try:
+            print("****")
             object_id = request.GET.get('objectId')
             sales = Sales.objects.get(pk=object_id)
             customer_info = {
@@ -506,11 +508,21 @@ class SalesAdmin(admin.ModelAdmin):
             today_date = datetime.now().date()
             selected_card = sales.cards.filter(card_to_be_used=True).first()
             selected_account = sales.Accounts.filter(account_to_be_used=True).first()
+            invoice = Invoice.objects.create(
+                sale=sales,
+                payment=payment_method,
+                security=security_option,
+                gateway=gateway,
+                Merchant_Name=merchant
+            )
+            invoice_id = invoice.id
 
+            print(invoice_id)
+            print(invoice)
             context = {
+                'invoice_id': invoice_id,
                 'client_info': customer_info,
                 'today_date': today_date,
-                'cards': selected_card,
                 'account': selected_account,
                 'object_id': object_id,
                 'security_option': security_option,
@@ -519,7 +531,7 @@ class SalesAdmin(admin.ModelAdmin):
                 'merchant': merchant
             }
 
-            return render(request, 'enter_payment_details.html', context)
+            return JsonResponse(context)
 
         except Sales.DoesNotExist:
             return JsonResponse({'error': 'Sales object does not exist'}, status=404)
@@ -597,3 +609,4 @@ admin.site.register(Gateway, MerchantsAdmin)
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Dashboard, DashboardAdmin)
 # admin.site.register(urls)
+admin.site.register(Invoice)
