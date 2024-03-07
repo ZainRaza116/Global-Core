@@ -318,20 +318,20 @@ class SalesAdmin(admin.ModelAdmin):
     @csrf_exempt
     def my_view(self, request, object_id):
         if request.method == "POST":
+            print(request.body)
             sales = Sales.objects.get(pk=object_id)
             charge_id = request.POST.get('chargeId')
             selected_card = sales.cards.filter(card_to_be_used=True).first()
             merchant =request.POST.get('merchant')
             security = request.POST.get('security')
-            print("______________")
-            print(security, merchant)
+
             amount = sales.amount
             credit_card_number = selected_card.card_no
             payment_method = request.POST.get('payment_method')
-
             gateway_info = request.POST.get('gateway')
             gateway_id, gateway = gateway_info.split(",")
-
+            print("______________")
+            print(gateway_info)
             cardNumber = credit_card_number.replace(" ", "")
             expirationMonth = selected_card.expiry_month
             expirationYear = selected_card.expiry_year
