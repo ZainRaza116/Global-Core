@@ -18,13 +18,10 @@ class CustomUser(AbstractUser, PermissionsMixin):
     target = models.CharField(max_length=255, blank=False, null=False, verbose_name='Target')
     hiring_date = models.DateField(blank=False, default=timezone.now, null=False, verbose_name='Hiring Date')
     is_floormanager = models.BooleanField(default=False, verbose_name='Floor Manager')
-
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['salary', 'target', 'hiring_date']
     objects = UserManager()
 
-
-# Create your models here.
 class Dashboard(models.Model):
     pass
 
@@ -220,7 +217,6 @@ class Card(models.Model):
     def clean(self):
         pass
 
-
     def __str__(self):
         return f"Card - {self.card_no}"
 
@@ -229,20 +225,6 @@ class Card(models.Model):
         if self.card_to_be_used:
             Card.objects.filter(sales=self.sales).exclude(id=self.id).update(card_to_be_used=False)
         super().save(*args, **kwargs)
-
-
-
-
-    # def clean(self):
-    #     # Ensure only one card is set to be used per sales instance
-    #     if self.card_to_be_used and self.sales.cards.filter(card_to_be_used=True).exclude(pk=self.pk).exists():
-    #         raise ValidationError(_('Only one card can be set as "to be used" per sales.'))
-    #
-    # def save(self, *args, **kwargs):
-    #     # Ensure only one card is set to be used per sales instance
-    #     if self.card_to_be_used:
-    #         self.sales.cards.exclude(pk=self.pk).update(card_to_be_used=False)
-    #     super().save(*args, **kwargs)
 
 
 class PaymentDetail(models.Model):
@@ -255,7 +237,7 @@ class Merchants(models.Model):
     merchant_link = models.ForeignKey(
         Gateway,
         on_delete=models.PROTECT,
-        verbose_name='Merchant Name',
+        verbose_name='Gateway Name',
         related_name='merchant_accounts_link',
         default=0,
     )
@@ -268,8 +250,8 @@ class Merchants(models.Model):
     )
     access_token = models.CharField(
         max_length=255,
-        blank=False,  # Indicates whether the field is allowed to be blank in forms
-        null=False,  # Indicates whether the field is allowed to be NULL in the database
+        blank=False,
+        null=False,
         verbose_name='Access Token'
     )
     login_id = models.CharField(
@@ -278,6 +260,8 @@ class Merchants(models.Model):
         null=True,
         verbose_name='Login Id/ Gateway Token'
     )
+    def __str__(self):
+        return f"{self.merchant_link}"
 
 
 class Messages(models.Model):
@@ -287,7 +271,7 @@ class Messages(models.Model):
     message = models.TextField(verbose_name='Message')
 
     def save(self, *args, **kwargs):
-        if not self.id:  # If it's a new instance
+        if not self.id:
             if hasattr(self, 'request'):
                 self.added_by = self.request.user
         super(Messages, self).save(*args, **kwargs)
@@ -302,14 +286,3 @@ class Invoice(models.Model):
     security = models.CharField(max_length=255, verbose_name='Security')
     gateway = models.CharField(max_length=255, verbose_name='Gateway')
     Merchant_Name = models.CharField(max_length=255, verbose_name='Merchant')
-# from authorizenet.models import Response
-# from authorizenet.models import CIMResponse as BaseCIMResponse
-#
-#
-# class CustomCIMResponse(BaseCIMResponse):
-#     transaction_response = models.ForeignKey(
-#         'authorizenet.Response',
-#         on_delete=models.SET_NULL,
-#         blank=True,
-#         null=True
-#     )

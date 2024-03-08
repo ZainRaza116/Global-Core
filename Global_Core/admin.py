@@ -1,32 +1,31 @@
-from django.contrib import admin
 import requests
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import redirect
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
-
-# from stripe._account.Account.Settings import Payments
 from .models import *
 from django.contrib.auth.admin import UserAdmin
 from .models import CustomUser
 from django.contrib.auth import get_user_model
 from django import forms
 from django.contrib.auth.models import Group
-from django.contrib.admin import AdminSite
-# from . import urls
 from datetime import datetime
-from django.core.serializers import serialize
 import lxml.etree as ET
 from .authorizepayment import authorize_credit_card, charge_credit_card
 from .stripe_payment import authorize_stripe, charge_stripe
-import stripe,json
-get_user_model()
+import json
 from django.shortcuts import render
 from paypalcheckoutsdk.core import PayPalHttpClient, SandboxEnvironment
 from paypalcheckoutsdk.orders import OrdersCreateRequest
-from .access_api import get_merchant_api_key , get_merchant_login_key
+from .access_api import get_merchant_api_key, get_merchant_login_key
+from .permission import IsEmployeePermission
+from django.contrib import admin
+from django.urls import path
+from .models import Sales
+from django.forms.models import BaseInlineFormSet
+
+get_user_model()
 
 
 class CustomUserAdminForm(forms.ModelForm):
@@ -41,16 +40,17 @@ class CustomUserAdminForm(forms.ModelForm):
 class CustomUserAdmin(UserAdmin):
     model = CustomUser
     verbose_name_plural = 'Employees'
-    list_display = ('email', 'salary', 'target', 'hiring_date')
+    list_display = ('Name', 'email', 'salary', 'target', 'hiring_date')
 
     def get_groups(self, obj):
         return ", ".join([group.name for group in obj.groups.all()])
+
     get_groups.short_description = 'Groups'
 
     form = CustomUserAdminForm
 
     fieldsets = (
-        (None, {'fields': ('email', 'password')}),
+        (None, {'fields': ('Name','email', 'password')}),
         ('Personal info', {'fields': ('salary', 'target', 'hiring_date')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups')}),
         ('Important dates', {'fields': ('last_login',)}),
@@ -59,14 +59,18 @@ class CustomUserAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'password1', 'password2', 'is_staff', 'is_superuser', 'is_active', 'groups')}
-        ),
+            'fields': ('Name', 'email', 'password1', 'password2', 'is_staff', 'is_superuser', 'is_active', 'groups')}
+         ),
     )
     ordering = ('email',)
 
 
-class MerchantsAdmin(admin.ModelAdmin):
+class GatewayAdmin(admin.ModelAdmin):
     list_display = ['merchant', 'merchant_dba', 'account_type', 'merchant_type']
+
+
+class MerchantAdmin(admin.ModelAdmin):
+    list_display = ['merchant_link', 'Company_Name']
 
 
 class LinksAdmin(admin.ModelAdmin):
@@ -75,13 +79,6 @@ class LinksAdmin(admin.ModelAdmin):
 
 class ExpensesAdmin(admin.ModelAdmin):
     list_display = ['date_incurred', 'title', 'amount', 'expenses_type']
-from django.contrib import admin
-from django.urls import path
-from django.http import HttpResponseRedirect
-from django.urls import reverse
-from django.contrib import messages
-from .models import Sales
-from django.forms.models import BaseInlineFormSet
 
 
 class AccountInlineFormSet(BaseInlineFormSet):
@@ -112,17 +109,14 @@ class BankAccountInline(admin.StackedInline):
     forms = AccountInlineFormSet
 
 
-
 class SalesAdmin(admin.ModelAdmin):
-    # inlines = [CardInline, BankAccountInline]
     change_form_template = 'admin/sales/change_form.html'
-
-    # class Media:
-    #     js = ('admin/dynamic_inline.js',)
 
     inlines = [CardInline, BankAccountInline]
 
-    list_display = ['customer_name', "customer_address", "amount", "payment_method", "added_by" , "custom_action"]
+    list_display = ['customer_name', "customer_address", "amount", "payment_method", "added_by", "custom_action"]
+    permission_classes = [IsEmployeePermission]
+    print("?")
 
     def get_urls(self):
 
@@ -135,20 +129,19 @@ class SalesAdmin(admin.ModelAdmin):
                  name="paypal"),
             path("<int:object_id>/payment/authorize_paypal/<int:merchant_id>",
                  self.admin_site.admin_view(self.authorize_paypal), name="authorize_paypal"),
-            path("<int:object_id>/response/",  self.admin_site.admin_view(self.custom_response)),
+            path("<int:object_id>/response/", self.admin_site.admin_view(self.custom_response)),
             path("details/", self.admin_site.admin_view(self.get_details_view),
                  name="get_details_view")
         ]
         return my_urls + urls
 
-
-    def custom_response(self , request , object_id):
+    def custom_response(self, request, object_id):
         if request.method == "POST":
             message_text = request.POST.get("message")
             if message_text:
                 sales = Sales.objects.get(pk=object_id)
                 message = Messages.objects.create(added_by=request.user, sale=sales, message=message_text)
-
+                return redirect('/admin/Global_Core/sales/')
         sales = Sales.objects.get(pk=object_id)
         messages_all = sales.messages.all().order_by('timestamp')
         response = sales.description
@@ -165,23 +158,15 @@ class SalesAdmin(admin.ModelAdmin):
 
         sales = Sales.objects.get(pk=object_id)
         if request.method == 'POST':
-            # Verify IPN data with PayPal (optional but recommended)
-            # Process the IPN data
             ipn_data = request.POST.dict()
-
-            # Perform actions based on the IPN data, such as updating database records
-            # Example: Log IPN data to console
             print("Received PayPal IPN:")
             print(json.dumps(ipn_data, indent=4))
-
-            # Return HTTP 200 OK status to acknowledge receipt of IPN
             return HttpResponse(status=200)
         else:
             client_id = get_merchant_api_key(merchant_id)
             client_secret = get_merchant_login_key(merchant_id)
             environment = SandboxEnvironment(client_id=client_id, client_secret=client_secret)
             client = PayPalHttpClient(environment)
-            # Create PayPal order
             create_request = OrdersCreateRequest()
             create_request.prefer("return=representation")
             create_request.request_body({
@@ -189,31 +174,15 @@ class SalesAdmin(admin.ModelAdmin):
                 "purchase_units": [{
                     "amount": {
                         "currency_code": "USD",
-                        "value": sales.amount  # You can make this dynamic based on your requirements
+                        "value": sales.amount
                     }
                 }]
             })
 
-            try:
-                response = client.execute(create_request)
-                order_id = response.result.id
-                ipn_data = request.POST.dict()
-                print("Received PayPal IPN:")
-                print(json.dumps(ipn_data, indent=4))
-                return render(request, 'paypal.html', {'order_id': order_id, 'object_id': object_id, 'sales': sales})
-            except Exception as e:
-                print({'error_message': str(e)})
-                return render(request, 'error.html', {'error_message': str(e)})
-
-    def paypal(self, request, object_id , merchant_id):
+    def paypal(self, request, object_id, merchant_id):
         sales = Sales.objects.get(pk=object_id)
         if request.method == 'POST':
-            # Verify IPN data with PayPal (optional but recommended)
-            # Process the IPN data
             ipn_data = request.POST.dict()
-
-            # Perform actions based on the IPN data, such as updating database records
-            # Example: Log IPN data to console
             print("Received PayPal IPN:")
             print(json.dumps(ipn_data, indent=4))
 
@@ -231,7 +200,7 @@ class SalesAdmin(admin.ModelAdmin):
                 "purchase_units": [{
                     "amount": {
                         "currency_code": "USD",
-                        "value": sales.amount  # You can make this dynamic based on your requirements
+                        "value": sales.amount
                     }
                 }]
             })
@@ -242,7 +211,8 @@ class SalesAdmin(admin.ModelAdmin):
                 ipn_data = request.POST.dict()
                 print("Received PayPal IPN:")
                 print(json.dumps(ipn_data, indent=4))
-                return render(request, 'paypal.html', {'order_id': order_id, 'object_id': object_id, 'sales': sales})
+                return render(request, 'paypal.html', {'order_id': order_id,
+                                                       'object_id': object_id, 'sales': sales})
             except Exception as e:
                 print({'error_message': str(e)})
                 return render(request, 'error.html', {'error_message': str(e)})
@@ -277,19 +247,15 @@ class SalesAdmin(admin.ModelAdmin):
                     'cardholder_info': json_data.get('cardHolderInfo'),
                 }
 
-                # Make POST request using requests library
                 response = requests.post('https://secure.networkmerchants.com/api/transact.php', data=fields)
 
-                # Print the response
                 print(response.text)
                 return JsonResponse({'message': 'Data received successfully'})
             except json.JSONDecodeError:
-                # Handle JSON decoding errors
                 return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
 
         sales = Sales.objects.get(pk=object_id)
         selected_card = sales.cards.filter(card_to_be_used=True).first()
-        # expiration_date = selected_card.expire_date
         expiration_month = selected_card.expiry_month
         expiration_year = selected_card.expiry_year
         print(expiration_month, expiration_year)
@@ -312,7 +278,6 @@ class SalesAdmin(admin.ModelAdmin):
             'customer_info': customer_info,
 
         }
-        # Render the template with the context and return an HttpResponse object
         return render(request, "example.html", context)
 
     @csrf_exempt
@@ -322,7 +287,7 @@ class SalesAdmin(admin.ModelAdmin):
             sales = Sales.objects.get(pk=object_id)
             charge_id = request.POST.get('chargeId')
             selected_card = sales.cards.filter(card_to_be_used=True).first()
-            merchant =request.POST.get('merchant')
+            merchant = request.POST.get('merchant')
             security = request.POST.get('security')
 
             amount = sales.amount
@@ -330,7 +295,6 @@ class SalesAdmin(admin.ModelAdmin):
             payment_method = request.POST.get('payment_method')
             gateway_info = request.POST.get('gateway')
             gateway_id, gateway = gateway_info.split(",")
-            print("______________")
             print(gateway_info)
             cardNumber = credit_card_number.replace(" ", "")
             expirationMonth = selected_card.expiry_month
@@ -351,7 +315,7 @@ class SalesAdmin(admin.ModelAdmin):
             )
             merchant_id = Merchants.objects.filter(
                 merchant_link_id=gateway_id,
-                Company_Name__company_name= merchant
+                Company_Name__company_name=merchant
             ).values_list('id', flat=True).first()
             print(payment_method)
             print(merchant_id)
@@ -359,15 +323,14 @@ class SalesAdmin(admin.ModelAdmin):
                 expirationDate = f"{expirationMonth}/{expirationYear}"
                 xml_response = charge_credit_card(amount, cardNumber, expirationDate, cardCod, firstName, lastName,
                                                   company,
-                                                  address, state, zip_code , merchant_id)
-                # xml_string = ET.tostring(xml_response)
+                                                  address, state, zip_code, merchant_id)
                 return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
 
             elif payment_method == 'Authorize' and gateway == 'Authorize.net':
                 expirationDate = f"{expirationMonth}/{expirationYear}"
                 xml_response = authorize_credit_card(amount, cardNumber, expirationDate, cardCod, firstName, lastName,
                                                      company,
-                                                     address, state, zip_code ,merchant_id )
+                                                     address, state, zip_code, merchant_id)
                 xml_string = ET.tostring(xml_response)
                 return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
             # **************************  STRIPE  ******************************
@@ -376,7 +339,6 @@ class SalesAdmin(admin.ModelAdmin):
                     amount = amount
                     print(amount)
                     authorize_stripe(amount, merchant_id)
-                    # Assuming your view name is 'payment_view' and it expects an 'object_id' parameter
                     return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
                 except Exception as e:
                     error_message = "An error occurred: {}".format(e)
@@ -439,15 +401,13 @@ class SalesAdmin(admin.ModelAdmin):
                 check = get_merchant_login_key(merchant_id)
                 print("****************")
                 print(check)
-                # if check is None:
-                #     return JsonResponse({'error': 'No GateWay Key'}, status=500)
-                # else:
                 return redirect('/admin/Global_Core/sales/{}/payment/3D_secure/{}'.format(object_id, merchant_id))
 
             elif payment_method == 'Sale' and gateway == 'PayPal':
-                return redirect('/admin/Global_Core/sales/{}/payment/paypal/{}'.format(object_id,merchant_id))
+                return redirect('/admin/Global_Core/sales/{}/payment/paypal/{}'.format(object_id, merchant_id))
             elif payment_method == 'Authorize' and gateway == 'PayPal':
-                return redirect('/admin/Global_Core/sales/{}/payment/authorize_paypal/{}'.format(object_id, merchant_id))
+                return redirect(
+                    '/admin/Global_Core/sales/{}/payment/authorize_paypal/{}'.format(object_id, merchant_id))
             else:
                 return JsonResponse({'error': 'Invalid payment method or gateway'})
 
@@ -468,14 +428,12 @@ class SalesAdmin(admin.ModelAdmin):
             selected_account = sales.Accounts.filter(account_to_be_used=True).first()
             print(selected_account)
             if sales.payment_method == 'Account':
-                selected_card= None
+                selected_card = None
             else:
                 selected_account = sales.Accounts.filter(account_to_be_used=True).first()
 
             print("*********")
             print(selected_card)
-
-            # selected_card = cards_account.objects.filter(card_to_be_used=True).first()
             today_date = datetime.now().date()
             gateway = Gateway.objects.all()
             context = {
@@ -486,9 +444,7 @@ class SalesAdmin(admin.ModelAdmin):
                 'gateway': gateway,
                 'object_id': object_id
             }
-
             return render(request, "enter_payment_details.html", context)
-
 
     def get_details_view(self, request):
         try:
@@ -516,9 +472,6 @@ class SalesAdmin(admin.ModelAdmin):
                 Merchant_Name=merchant
             )
             invoice_id = invoice.id
-
-            print(invoice_id)
-            print(invoice)
             context = {
                 'invoice_id': invoice_id,
                 'client_info': customer_info,
@@ -544,24 +497,24 @@ class SalesAdmin(admin.ModelAdmin):
         status_image_url = '/static/loading.png'
         if obj.status == 'pending' or obj.status == 'in_process':
             status_html = format_html(
-                '<img src="{}" alt="Status" style="max-height: 20px; max-width: 20px; margin-right: 5px; cursor: pointer;" onclick="alert(\'You want to change your status to Completed?\')" />',
+                '<img src="{}" alt="Status" style="max-height: 20px; max-width: 20px; margin-right: 5px;'
+                ' cursor: pointer;" onclick="alert(\'You want to change your status to Completed?\')" />',
                 status_image_url)
         else:
             status_html = format_html(
-                '<a><img src="{}" alt="Status" style="max-height: 20px; max-width: 20px; margin-right: 5px;" /></a>',
+                '<a><img src="{}" alt="Status" style="max-height: 20px; max-width: 20px; '
+                'margin-right: 5px;" /></a>',
 
                 '/static/complete.png')
-        print(obj.status)
-
-
         payment_html = format_html(
-            '<a href="{}"><img src="{}" alt="Payment" style="max-height: 20px; max-width: 20px; margin-right: 5px;" /></a>',
+            '<a href="{}"><img src="{}" alt="Payment" style="max-height: 20px; max-width: 20px;'
+            ' margin-right: 5px;" /></a>',
             f"/admin/Global_Core/sales/{obj.id}/payment/", payment_image_url)
 
         details_html = format_html(
-            '<a href="{}"><img src="{}" alt="View Details" style="max-height: 20px; max-width: 20px; margin-right: 5px;" /></a>',
+            '<a href="{}"><img src="{}" alt="View Details" style="max-height:'
+            ' 20px; max-width: 20px; margin-right: 5px;" /></a>',
             f"/admin/Global_Core/sales/{obj.id}/response/", details_image_url)
-
 
         return format_html(
             '<div style="display: flex;">'
@@ -569,11 +522,7 @@ class SalesAdmin(admin.ModelAdmin):
             '</div>',
             payment_html, details_html, status_html)
 
-
-
-
     custom_action.short_description = 'Actions'
-
 
     class Media:
         js = (
@@ -587,14 +536,10 @@ class DashboardAdmin(admin.ModelAdmin):
 
         def get_context_data(self, **kwargs):
             context = super().get_context_data(**kwargs)
-            # Fetch sales data (you may need to adjust this query based on your models)
             sales_data = Sales.objects.all().values('date', 'amount')
-            # Convert QuerySet to a list of dictionaries
             sales_data_list = list(sales_data)
-            # Convert date to string for JSON serialization
             for sale in sales_data_list:
                 sale['date'] = sale['date'].strftime('%Y-%m-%d')
-            # Add sales data to the context
             context['sales_data_json'] = json.dumps(sales_data_list)
             return context
 
@@ -603,8 +548,8 @@ admin.site.register(Sales, SalesAdmin)
 admin.site.register(Expenses, ExpensesAdmin)
 admin.site.register(Company)
 admin.site.register(Links, LinksAdmin)
-admin.site.register(Merchants)
-admin.site.register(Gateway, MerchantsAdmin)
+admin.site.register(Merchants, MerchantAdmin)
+admin.site.register(Gateway, GatewayAdmin)
 # admin.site.register(Sales)
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Dashboard, DashboardAdmin)

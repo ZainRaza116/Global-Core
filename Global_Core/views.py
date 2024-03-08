@@ -284,21 +284,22 @@ def get_merchants(request):
 
 def invoice(request, invoice_id):
     invoice_object = get_object_or_404(Invoice, pk=invoice_id)
-    gateway = invoice_object.gateway.split(',')[1]
-
+    gateway = invoice_object.gateway
     sale_object = invoice_object.sale
     selected_card = sale_object.cards.filter(card_to_be_used=True).first()
     date = datetime.now().date()
     sale_id = sale_object.id
+    payment = invoice_object.payment
 
     contex = {
-        "object_id" : sale_id,
+        "object_id": sale_id,
         "gateway": gateway,
         "invoice_id": invoice_id,
         "invoice_object": invoice_object,
         "date": date,
         'sale': sale_object,
-        'cards': selected_card
+        'cards': selected_card,
+        'payment_method': payment
     }
     return render(request, 'invoice.html', contex)
 
