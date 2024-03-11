@@ -25,8 +25,8 @@ from django.urls import path
 from .models import Sales
 from django.forms.models import BaseInlineFormSet
 
-get_user_model()
-
+c_user = get_user_model()
+print(get_user_model())
 
 class CustomUserAdminForm(forms.ModelForm):
     groups = forms.ModelMultipleChoiceField(queryset=Group.objects.all(),
@@ -118,8 +118,8 @@ class SalesAdmin(admin.ModelAdmin):
     permission_classes = [IsEmployeePermission]
     print("?")
 
-    def get_urls(self):
 
+    def get_urls(self):
         urls = super().get_urls()
         my_urls = [
             path("<int:object_id>/payment/", self.admin_site.admin_view(self.my_view)),
@@ -280,6 +280,7 @@ class SalesAdmin(admin.ModelAdmin):
         }
         return render(request, "example.html", context)
 
+
     @csrf_exempt
     def my_view(self, request, object_id):
         if request.method == "POST":
@@ -368,7 +369,6 @@ class SalesAdmin(admin.ModelAdmin):
                     }
                     response = requests.post('https://secure.networkmerchants.com/api/transact.php', data=fields)
                     print("*********************")
-                    # Print the response
                     print(response.text)
 
                     return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
@@ -416,7 +416,6 @@ class SalesAdmin(admin.ModelAdmin):
                 sales = Sales.objects.get(pk=object_id)
             except Sales.DoesNotExist:
                 return JsonResponse({'error ; "Sale" does not exist'}, status=400)
-
             customer_info = {
                 'customer_name': sales.customer_name,
                 'customer_address': sales.customer_address,
@@ -492,8 +491,8 @@ class SalesAdmin(admin.ModelAdmin):
             return JsonResponse({'error': str(e)}, status=500)
 
     def custom_action(self, obj):
-        payment_image_url = '/static/credit-card.png'  # Image for payment action
-        details_image_url = '/static/reply-message.png'  # Image for view details action
+        payment_image_url = '/static/credit-card.png'
+        details_image_url = '/static/reply-message.png'
         status_image_url = '/static/loading.png'
         if obj.status == 'pending' or obj.status == 'in_process':
             status_html = format_html(
@@ -506,6 +505,7 @@ class SalesAdmin(admin.ModelAdmin):
                 'margin-right: 5px;" /></a>',
 
                 '/static/complete.png')
+
         payment_html = format_html(
             '<a href="{}"><img src="{}" alt="Payment" style="max-height: 20px; max-width: 20px;'
             ' margin-right: 5px;" /></a>',
@@ -523,12 +523,10 @@ class SalesAdmin(admin.ModelAdmin):
             payment_html, details_html, status_html)
 
     custom_action.short_description = 'Actions'
-
     class Media:
         js = (
             'admin/js/status_popup.js',
         )
-
 
 class DashboardAdmin(admin.ModelAdmin):
     class SalesChartDataView(TemplateView):
