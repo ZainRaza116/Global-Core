@@ -114,9 +114,66 @@ class SalesAdmin(admin.ModelAdmin):
 
     inlines = [CardInline, BankAccountInline]
 
-    list_display = ['customer_name', "customer_address", "amount", "payment_method", "added_by", "custom_action"]
-    permission_classes = [IsEmployeePermission]
-    print("?")
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        if not request.user.is_superuser:
+            form.base_fields['added_by'].disabled = True
+            form.base_fields['added_by'].initial = request.user.id
+        return form
+
+    def get_queryset(self, request):
+        user = request.user
+        if user.is_superuser:
+            return super().get_queryset(request)
+        else:
+            return Sales.objects.filter(added_by=user)
+
+    def gets_queryset(self, request):
+        # Store the request object as an attribute of the instance
+        self.request = request
+        return super().get_queryset(request)
+
+    def custom_action12(self, obj):
+        payment_image_url = '/static/credit-card.png'
+        details_image_url = '/static/reply-message.png'
+        status_image_url = '/static/loading.png'
+
+        if obj.status == 'pending' or obj.status == 'in_process':
+            status_html = format_html(
+                '<img src="{}" alt="Status" style="max-height: 20px; max-width: 20px; margin-right: 5px;'
+                ' cursor: pointer;" onclick="alert(\'You want to change your status to Completed?\')" />',
+                status_image_url)
+        else:
+            status_html = format_html(
+                '<a><img src="{}" alt="Status" style="max-height: 20px; max-width: 20px; '
+                'margin-right: 5px;" /></a>',
+                '/static/complete.png')
+
+
+        if self.request.user.is_superuser:
+            payment_html = format_html(
+                '<a href="{}"><img src="{}" alt="Payment" style="max-height: 20px; max-width: 20px;'
+                ' margin-right: 5px;" /></a>',
+                f"/admin/Global_Core/sales/{obj.id}/payment/", payment_image_url)
+        else:
+            payment_html = ''
+
+        details_html = format_html(
+            '<a href="{}"><img src="{}" alt="View Details" style="max-height:'
+            ' 20px; max-width: 20px; margin-right: 5px;" /></a>',
+            f"/admin/Global_Core/sales/{obj.id}/response/", details_image_url)
+
+        return format_html(
+            '<div style="display: flex;">'
+            '{}{}{}'
+            '</div>',
+            payment_html, details_html, status_html)
+
+    custom_action12.short_description = 'Actions'
+    class Media:
+        js = (
+            'admin/js/status_popup.js',
+        )
 
 
     def get_urls(self):
@@ -422,7 +479,11 @@ class SalesAdmin(admin.ModelAdmin):
                 'customer_email': sales.customer_email,
                 'amount': sales.amount
             }
-
+            check = request.user.is_superuser
+            if check:
+                print("Hello Super User")
+            else:
+                print("Hello Employee")
             selected_card = sales.cards.filter(card_to_be_used=True).first()
             selected_account = sales.Accounts.filter(account_to_be_used=True).first()
             print(selected_account)
@@ -490,43 +551,9 @@ class SalesAdmin(admin.ModelAdmin):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-    def custom_action(self, obj):
-        payment_image_url = '/static/credit-card.png'
-        details_image_url = '/static/reply-message.png'
-        status_image_url = '/static/loading.png'
-        if obj.status == 'pending' or obj.status == 'in_process':
-            status_html = format_html(
-                '<img src="{}" alt="Status" style="max-height: 20px; max-width: 20px; margin-right: 5px;'
-                ' cursor: pointer;" onclick="alert(\'You want to change your status to Completed?\')" />',
-                status_image_url)
-        else:
-            status_html = format_html(
-                '<a><img src="{}" alt="Status" style="max-height: 20px; max-width: 20px; '
-                'margin-right: 5px;" /></a>',
 
-                '/static/complete.png')
+    list_display = ['customer_name', "customer_address", "amount", "payment_method", "added_by", "custom_action12"]
 
-        payment_html = format_html(
-            '<a href="{}"><img src="{}" alt="Payment" style="max-height: 20px; max-width: 20px;'
-            ' margin-right: 5px;" /></a>',
-            f"/admin/Global_Core/sales/{obj.id}/payment/", payment_image_url)
-
-        details_html = format_html(
-            '<a href="{}"><img src="{}" alt="View Details" style="max-height:'
-            ' 20px; max-width: 20px; margin-right: 5px;" /></a>',
-            f"/admin/Global_Core/sales/{obj.id}/response/", details_image_url)
-
-        return format_html(
-            '<div style="display: flex;">'
-            '{}{}{}'
-            '</div>',
-            payment_html, details_html, status_html)
-
-    custom_action.short_description = 'Actions'
-    class Media:
-        js = (
-            'admin/js/status_popup.js',
-        )
 
 class DashboardAdmin(admin.ModelAdmin):
     class SalesChartDataView(TemplateView):
