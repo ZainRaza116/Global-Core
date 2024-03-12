@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<style>
+    *{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body{
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+
+.new-invoice .logo-main{
+    margin-top: 80px;
+    margin-bottom: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.new-invoice .address-main{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-content: center;
+    gap: 4px;
+    margin-bottom: 100px;
+}
+
+.new-invoice .invoice-data{
+    background-color: #2b2b2b;
+    display: flex;
+    width: 100%;
+    padding: 70px 100px;
+    color: white;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.new-invoice .invoice-data .boxes{
+    display: flex;
+    width: 100%;
+    justify-content: space-evenly;
+    margin-top: 50px;
+    align-items: flex-start;
+}
+
+.new-invoice .footer{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 80px;
+}
+
+.new-invoice .footer .boxes{
+    width: 90%;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    padding: 20px 80px;
+    background-color: #2b2b2b0d;
+    border-radius: 5px;
+}
+
+.new-invoice .footer .boxes > div{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.new-invoice .footer .bill-amount{
+    width: 100%;
+    display: flex;
+    justify-content: end;
+    padding: 0 30%;
+    margin-top: 100px;
+}
+
+.new-invoice .footer .pay-button{
+    width: 100%;
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 25%;
+}
+
+.new-invoice .footer .pay-button button{
+    padding: 15px;
+    font-size: 19px;
+    font-weight: 700;
+    background-color: #2b2b2b;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+@media screen and (max-width: 1100px) {
+    .new-invoice .invoice-data{
+        padding: 50px 50px;
+    }
+}
+
+@media screen and (max-width: 900px) {
+    .new-invoice .invoice-data .boxes{
+        flex-direction: column;
+        gap: 40px;
+        align-items: center;
+    }
+    .new-invoice .footer .bill-amount{
+        padding: 0 10%;
+    }
+    .new-invoice .footer .pay-button{
+        padding: 0 15%;
+    }
+    .new-invoice .footer .boxes{
+        grid-template-columns: 1fr 1fr;
+        gap: 50px;
+        padding: 20px 50px;
+    }
+}
+
+@media screen and (max-width: 450px) {
+    .new-invoice .footer .boxes{
+        grid-template-columns: 1fr;
+    }
+}
+    </style>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice</title>
+
+</head>
+<form id="paymentForm" method="POST", action="/admin/Global_Core/sales/{{ object_id }}/payment/">
+    {% csrf_token %}
+    <input type="hidden" id="gateway" name="gateway" value="{{ gateway }}">
+   <input type="hidden" id="payment_method" name="payment_method" value="{{ invoice_object.payment }}">
+    <input type="hidden" id="security" name="security" value="{{ invoice_object.security }}">
+    <input type="hidden" id="company_name" name="merchant" value="{{ invoice_object.Merchant_Name }}">
+
+<body class="new-invoice">
+    <!-- logo -->
+    <div class="logo-main">
+        <img src="../../static/logo.png" width="185px" />
+    </div>
+    <!-- address -->
+    <div class="address-main">
+        <p style="text-align: center; text-transform: uppercase; font-weight: 700; font-size: 16px;">Global Core Communication</p>
+        <p style="text-align: center; text-transform: capitalize; font-size: 14px;">Abdalian Society Johar Town Block R1 Lahore, Pakistan</p>
+        <p style="text-align: center; text-transform: capitalize; font-size: 14px;">Phone: (92) 328-4812900 | Email: info@globalcorecommunications.com</p>
+        <p style="text-align: center; text-transform: capitalize; font-size: 14px;">www.golbalcorecommunications.com</p>
+    </div>
+    <!-- invoice-data -->
+    <div class="invoice-data">
+        <p style="text-align: center; font-size: 40px; font-weight: 700;">INVOICE</p>
+        <div class="boxes">
+            <div style="width: 250px;">
+                <p style="text-align: center; font-size: 15px; font-weight: 700;">INVOICE TO:</p>
+                <p style="text-align: center; font-size: 13px; margin-top:12px;"><b>{{ invoice_object.sale.customer_name }}</b></p>
+                <p style="text-align: center; font-size: 13px; margin-top:4px;">{{ invoice_object.sale.customer_email }}</p>
+                <p style="text-align: center; font-size: 13px; margin-top:4px;">{{ invoice_object.sale.customer_address }}</p>
+            </div>
+            <div style="width: 250px;">
+                <p style="text-align: center; font-size: 15px;">Invoice no.</p>
+                <p style="text-align: center; font-size: 15px; font-weight: 700; margin-top:4px;">INV000{{ invoice_id }}</p>
+                <p style="text-align: center; font-size: 13px; margin-top:12px;">Invoice Date:</p>
+                <p style="text-align: center; font-size: 15px; font-weight: 700; margin-top:4px;">{{ date }}</p>
+            </div>
+            <div style="width: 250px;">
+                <p style="text-align: center; font-size: 15px; font-weight: 700;">ACCOUNT DETAIL:</p>
+                <p style="text-align: center; font-size: 13px; margin-top:12px;"><b>CARD NUMBER:</b> **** **** **** {{ cards.card_no|slice:"-4:" }}</p>
+                <p style="text-align: center; font-size: 13px; margin-top:6px;"><b>Expiration Date:</b> {{ cards.expiry_month }}/{{ cards.expiry_year }}</p>
+                <p style="text-align: center; font-size: 13px; margin-top:6px;"><b>CVC:</b> XXX</p>
+                <p style="text-align: center; font-size: 13px; margin-top:6px;"><b>Billing Address</b></p>
+                <p style="text-align: center; font-size: 13px; margin-top:4px;">{{ cards.billing_address }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="boxes">
+            <div>
+                <p style="text-align: center; font-weight: 600; font-size: 15px;">GATEWAY</p>
+                <p name="gateway" id="gatewayValue" style="text-align: center; font-size: 17px;">{{ gateway }}</p>
+            </div>
+            <div>
+                <p style="text-align: center; font-weight: 600; font-size: 15px;">CARD</p>
+                <p  id="cardValue" style="text-align: center; font-size: 17px;">{{ invoice_object.payment }}</p>
+            </div>
+            <div>
+                <p style="text-align: center; font-weight: 600; font-size: 15px;">Security Method</p>
+                <p id="securityValue" style="text-align: center; font-size: 17px;">{{ invoice_object.security }}</p>
+            </div>
+            <div>
+                <p style="text-align: center; font-weight: 600; font-size: 15px;">Company Name</p>
+                <p id="companyNameValue" style="text-align: center; font-size: 17px;">{{ invoice_object.Merchant_Name }}</p>
+            </div>
+        </div>
+        <div class="bill-amount">
+            <div style="display: flex; gap: 100px; align-items: center;">
+                <p style="font-size: 15px; font-weight: 700;">TOTAL</p>
+                <p style="font-size: 40px; font-weight: 800;">$ {{ sale.amount}}</p>
+            </div>
+        </div>
+        <div class="pay-button">
+                <button type="submit">PROCEED TO PAY</button>
+        </div>
+        <p style="text-align: center; text-transform: uppercase; margin-top: 100px; margin-bottom: 50px; font-size: 12px;">Thank you for the projects!</p>
+    </div>
+</body>
+</form>
+<!--<script>-->
+<!--    let form = document.getElementById("paymentForm")-->
+<!--    form.addEventListener('submit',function (e){-->
+<!--        e.preventDefault()-->
+<!--        const gatewayValue = document.getElementById("gateway").innerHTML;-->
+<!--        const cardValue = document.getElementById("card").innerHTML;-->
+<!--        const securityValue = document.getElementById("security").innerHTML;-->
+<!--        const CompanyValue = document.getElementById("company_name").innerHTML;-->
+<!--        console.log(gatewayValue, cardValue, securityValue, CompanyValue)-->
+
+<!--        // let formData = new FormData(e.target)-->
+<!--        // let formObj = Object.fromEntries(formData)-->
+<!--        // console.log(JSON.stringify(formObj))-->
+<!--    })-->
+<!--    </script>-->
+</html>
