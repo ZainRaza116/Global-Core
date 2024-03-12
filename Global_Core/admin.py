@@ -129,9 +129,16 @@ class SalesAdmin(admin.ModelAdmin):
             return Sales.objects.filter(added_by=user)
 
     def gets_queryset(self, request):
-        # Store the request object as an attribute of the instance
         self.request = request
         return super().get_queryset(request)
+
+    def pay(self, obj):
+        payment_image_url = '/static/credit-card.png'
+        payment_html = format_html(
+            '<a href="{}"><img src="{}" alt="Payment" style="justify_content:center; max-height: 20px; max-width: 20px; '
+            'margin-right: 5px;" /></a>',
+            f"/admin/Global_Core/sales/{obj.id}/payment/", payment_image_url)
+        return payment_html
 
     def custom_action12(self, obj):
         payment_image_url = '/static/credit-card.png'
@@ -150,14 +157,6 @@ class SalesAdmin(admin.ModelAdmin):
                 '/static/complete.png')
 
 
-        if self.request.user.is_superuser:
-            payment_html = format_html(
-                '<a href="{}"><img src="{}" alt="Payment" style="max-height: 20px; max-width: 20px;'
-                ' margin-right: 5px;" /></a>',
-                f"/admin/Global_Core/sales/{obj.id}/payment/", payment_image_url)
-        else:
-            payment_html = ''
-
         details_html = format_html(
             '<a href="{}"><img src="{}" alt="View Details" style="max-height:'
             ' 20px; max-width: 20px; margin-right: 5px;" /></a>',
@@ -165,9 +164,9 @@ class SalesAdmin(admin.ModelAdmin):
 
         return format_html(
             '<div style="display: flex;">'
-            '{}{}{}'
+            '{}{}'
             '</div>',
-            payment_html, details_html, status_html)
+             details_html, status_html)
 
     custom_action12.short_description = 'Actions'
     class Media:
@@ -551,14 +550,16 @@ class SalesAdmin(admin.ModelAdmin):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-
-    list_display = ['customer_name', "customer_address", "amount", "payment_method", "added_by", "custom_action12"]
+    def get_list_display(self, request):
+        list_display = list(super().get_list_display(request))
+        if request.user.is_superuser:
+            list_display.append('pay')
+        return list_display
 
 
 class DashboardAdmin(admin.ModelAdmin):
     class SalesChartDataView(TemplateView):
         template_name = 'sales_chart.html'
-
         def get_context_data(self, **kwargs):
             context = super().get_context_data(**kwargs)
             sales_data = Sales.objects.all().values('date', 'amount')
