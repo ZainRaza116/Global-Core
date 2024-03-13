@@ -13,4 +13,5 @@ urlpatterns = [
     path("get_merchants/", views.get_merchants, name="get_merchants"),
     # path('admin/Global_Core/sales/<int:object_id>/details/', views.get_details_view, name='get_details'),
     path('customer_invoice/<int:invoice_id>/', views.invoice, name='test'),
+    path('mark_as_read/<int:message_id>/', views.mark_as_read, name='mark_as_read'),
 ]

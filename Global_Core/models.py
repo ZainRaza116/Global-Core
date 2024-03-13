@@ -8,6 +8,8 @@ from django.core.validators import RegexValidator
 from django.core.exceptions import ValidationError
 from localflavor.us.models import USStateField
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class CustomUser(AbstractUser, PermissionsMixin):
@@ -22,9 +24,9 @@ class CustomUser(AbstractUser, PermissionsMixin):
     REQUIRED_FIELDS = ['salary', 'target', 'hiring_date']
     objects = UserManager()
 
+
 class Dashboard(models.Model):
     pass
-
 
 class Gateway(models.Model):
     ACCOUNT_CHOICES = [
@@ -195,7 +197,8 @@ class Card(models.Model):
     card_no = models.CharField(
         max_length=255,
         verbose_name='Card Number',
-        validators=[validate_credit_card_number]
+        validators=[validate_credit_card_number],
+        blank=True
     )
     expiry_month = models.IntegerField(
         verbose_name='Expiry Month',
@@ -214,18 +217,27 @@ class Card(models.Model):
         verbose_name = 'Card'
         verbose_name_plural = 'Cards'
 
-    def clean(self):
-        pass
+    # def clean(self):
+    #     if self.sales.payment_method == "account":
+    #         # If payment method is "account", skip card validation
+    #         return
+    #     else:
+    #         # If payment method is not "account", perform card validation
+    #         super().clean()
+
 
     def __str__(self):
         return f"Card - {self.card_no}"
 
-    def save(self, *args, **kwargs):
-
-        if self.card_to_be_used:
-            Card.objects.filter(sales=self.sales).exclude(id=self.id).update(card_to_be_used=False)
-        super().save(*args, **kwargs)
-
+    # def save(self, *args, **kwargs):
+    #     if self.card_to_be_used:
+    #         Card.objects.filter(sales=self.sales).exclude(id=self.id).update(card_to_be_used=False)
+    #     super().save(*args, **kwargs)
+    #
+    # def _update_errors(self, validation_error):
+    #     for field, errors in validation_error.error_dict.items():
+    #         for error in errors:
+    #             self.add_error(field, error)
 
 class PaymentDetail(models.Model):
     sale = models.OneToOneField(Sales, on_delete=models.CASCADE, related_name='payment_detail')
@@ -269,6 +281,7 @@ class Messages(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     sale = models.ForeignKey(Sales, on_delete=models.CASCADE, related_name='messages')
     message = models.TextField(verbose_name='Message')
+    is_read = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         if not self.id:
@@ -279,6 +292,13 @@ class Messages(models.Model):
     def __str__(self):
         return f"Card - {self.message}"
 
+@receiver(post_save, sender=Messages)
+def handle_message_post_save(sender, instance, created, **kwargs):
+    if created:
+        # Get the sale associated with the message
+        sale = instance.sale
+        # Set is_read to False for all other messages associated with the same sale
+        sale.messages.exclude(pk=instance.pk).update(is_read=False)
 
 class Invoice(models.Model):
     sale = models.ForeignKey(Sales, on_delete=models.CASCADE, related_name='Invoice')

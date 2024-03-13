@@ -3,6 +3,7 @@ import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.utils.datetime_safe import datetime
+from django.views.decorators.http import require_POST
 
 from .authorizepayment import authorize_credit_card, charge_credit_card
 import lxml.etree as ET
@@ -302,4 +303,12 @@ def invoice(request, invoice_id):
         'payment_method': payment
     }
     return render(request, 'invoice.html', contex)
+
+
+@require_POST
+def mark_as_read(request, message_id):
+        message = Messages.objects.get(pk=message_id)
+        message.is_read = True
+        message.save()
+        return JsonResponse({'success': True})
 

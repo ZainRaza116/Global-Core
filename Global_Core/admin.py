@@ -81,37 +81,36 @@ class ExpensesAdmin(admin.ModelAdmin):
     list_display = ['date_incurred', 'title', 'amount', 'expenses_type']
 
 
-class AccountInlineFormSet(BaseInlineFormSet):
-    def clean(self):
-        super().clean()
-        in_use_count = sum(1 for form in self.forms if form.cleaned_data.get('account_to_be_used'))
-        if in_use_count == 0:
-            raise ValidationError("At least one Account must be marked as in use.")
-
-
-class CardInlineFormSet(BaseInlineFormSet):
-    def clean(self):
-        super().clean()
-        in_use_count = sum(1 for form in self.forms if form.cleaned_data.get('card_to_be_used'))
-        if in_use_count == 0:
-            raise ValidationError("At least one card must be marked as in use.")
+# class AccountInlineFormSet(BaseInlineFormSet):
+#     def clean(self):
+#         super().clean()
+#         in_use_count = sum(1 for form in self.forms if form.cleaned_data.get('account_to_be_used'))
+#         if in_use_count == 0:
+#             raise ValidationError("At least one Account must be marked as in use.")
+#
+#
+# class CardInlineFormSet(BaseInlineFormSet):
+#     def clean(self):
+#         super().clean()
+#         in_use_count = sum(1 for form in self.forms if form.cleaned_data.get('card_to_be_used'))
+#         if in_use_count == 0:
+#             raise ValidationError("At least one card must be marked as in use.")
 
 
 class CardInline(admin.StackedInline):
     model = Card
-    extra = 1
-    formset = CardInlineFormSet
+    extra = 0
+    # formset = CardInlineFormSet
 
 
 class BankAccountInline(admin.StackedInline):
     model = BankAccount
-    extra = 1
-    forms = AccountInlineFormSet
+    extra = 0
+    # forms = AccountInlineFormSet
 
 
 class SalesAdmin(admin.ModelAdmin):
     change_form_template = 'admin/sales/change_form.html'
-
     inlines = [CardInline, BankAccountInline]
 
     def get_form(self, request, obj=None, **kwargs):
@@ -121,21 +120,30 @@ class SalesAdmin(admin.ModelAdmin):
             form.base_fields['added_by'].initial = request.user.id
         return form
 
+    def get_inline_instances(self, request, obj=None):
+        inline_instances = super().get_inline_instances(request, obj)
+        return inline_instances
+
     def get_queryset(self, request):
         user = request.user
         if user.is_superuser:
             return super().get_queryset(request)
         else:
             return Sales.objects.filter(added_by=user)
+    #     return super().get_queryset(request)
 
-    def gets_queryset(self, request):
-        self.request = request
-        return super().get_queryset(request)
+    def get_list_display(self, request):
+        if request.user.is_superuser:
+            return ['customer_name', "customer_address", "amount", "payment_method", "added_by", "pay",
+                    "custom_action12"]
+        else:
+            return ['customer_name', "customer_address", "amount", "payment_method", "added_by", "custom_action12"]
 
     def pay(self, obj):
         payment_image_url = '/static/credit-card.png'
         payment_html = format_html(
-            '<a href="{}"><img src="{}" alt="Payment" style="justify_content:center; max-height: 20px; max-width: 20px; '
+            '<a href="{}"><img src="{}" alt="Payment" style="justify_content:center; max-height: 20px; '
+            'max-width: 20px; '
             'margin-right: 5px;" /></a>',
             f"/admin/Global_Core/sales/{obj.id}/payment/", payment_image_url)
         return payment_html
@@ -156,11 +164,18 @@ class SalesAdmin(admin.ModelAdmin):
                 'margin-right: 5px;" /></a>',
                 '/static/complete.png')
 
-
-        details_html = format_html(
-            '<a href="{}"><img src="{}" alt="View Details" style="max-height:'
-            ' 20px; max-width: 20px; margin-right: 5px;" /></a>',
-            f"/admin/Global_Core/sales/{obj.id}/response/", details_image_url)
+        message = obj.messages.first()
+        if message and not message.is_read:
+            details_image_url = '/static/notification_12299644.png'
+            details_html = format_html(
+                '<a href="{}?mark_as_read={}"><img src="{}" alt="View Details" style="max-height:'
+                ' 20px; max-width: 20px; margin-right: 5px;" /></a>',
+                f"/admin/Global_Core/sales/{obj.id}/response/", message.id, details_image_url)
+        else:
+            details_html = format_html(
+                '<a href="{}"><img src="{}" alt="View Details" style="max-height:'
+                ' 20px; max-width: 20px; margin-right: 5px;" /></a>',
+                f"/admin/Global_Core/sales/{obj.id}/response/", details_image_url)
 
         return format_html(
             '<div style="display: flex;">'
@@ -169,10 +184,6 @@ class SalesAdmin(admin.ModelAdmin):
              details_html, status_html)
 
     custom_action12.short_description = 'Actions'
-    class Media:
-        js = (
-            'admin/js/status_popup.js',
-        )
 
 
     def get_urls(self):
@@ -198,6 +209,23 @@ class SalesAdmin(admin.ModelAdmin):
                 sales = Sales.objects.get(pk=object_id)
                 message = Messages.objects.create(added_by=request.user, sale=sales, message=message_text)
                 return redirect('/admin/Global_Core/sales/')
+        elif request.method == "GET" and 'mark_as_read' in request.GET:
+            message_id = request.GET.get('mark_as_read')
+            message = Messages.objects.get(pk=message_id)
+            message.is_read = True
+            message.save()
+            sales = Sales.objects.get(pk=object_id)
+            messages_all = sales.messages.all().order_by('timestamp')
+            response = sales.description
+            print(messages_all)
+            context = {
+                'message': messages_all,
+                'object_id': object_id,
+                'sales': sales,
+                'response': response
+            }
+            return render(request, "response.html", context)
+
         sales = Sales.objects.get(pk=object_id)
         messages_all = sales.messages.all().order_by('timestamp')
         response = sales.description
@@ -274,7 +302,6 @@ class SalesAdmin(admin.ModelAdmin):
                 return render(request, 'error.html', {'error_message': str(e)})
 
     def secure(self, request, object_id, merchant_id):
-
         if request.method == 'POST':
             try:
                 print(request.body)
@@ -302,7 +329,7 @@ class SalesAdmin(admin.ModelAdmin):
                     'directory_server_id': json_data.get('directoryServerId'),
                     'cardholder_info': json_data.get('cardHolderInfo'),
                 }
-
+                print(fields)
                 response = requests.post('https://secure.networkmerchants.com/api/transact.php', data=fields)
 
                 print(response.text)
@@ -332,10 +359,9 @@ class SalesAdmin(admin.ModelAdmin):
             'object_id': object_id,
             'selected_card': selected_card,
             'customer_info': customer_info,
-
+            'merchant_id': merchant_id
         }
         return render(request, "example.html", context)
-
 
     @csrf_exempt
     def my_view(self, request, object_id):
@@ -376,14 +402,14 @@ class SalesAdmin(admin.ModelAdmin):
             ).values_list('id', flat=True).first()
             print(payment_method)
             print(merchant_id)
-            if payment_method == 'Sale' and gateway == 'Authorize.net':
+            if payment_method == 'Sale' and gateway.lower() == 'authorize.net':
                 expirationDate = f"{expirationMonth}/{expirationYear}"
                 xml_response = charge_credit_card(amount, cardNumber, expirationDate, cardCod, firstName, lastName,
                                                   company,
                                                   address, state, zip_code, merchant_id)
                 return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
 
-            elif payment_method == 'Authorize' and gateway == 'Authorize.net':
+            elif payment_method == 'Authorize' and gateway.lower() == 'authorize.net':
                 expirationDate = f"{expirationMonth}/{expirationYear}"
                 xml_response = authorize_credit_card(amount, cardNumber, expirationDate, cardCod, firstName, lastName,
                                                      company,
@@ -391,7 +417,7 @@ class SalesAdmin(admin.ModelAdmin):
                 xml_string = ET.tostring(xml_response)
                 return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
             # **************************  STRIPE  ******************************
-            elif payment_method == 'Authorize' and gateway == 'Stripe':
+            elif payment_method == 'Authorize' and gateway.lower() == 'stripe':
                 try:
                     amount = amount
                     print(amount)
@@ -401,7 +427,7 @@ class SalesAdmin(admin.ModelAdmin):
                     error_message = "An error occurred: {}".format(e)
                     print("Error:", error_message)
                     return JsonResponse({'error': error_message}, status=500)
-            elif payment_method == 'Sale' and gateway == 'Stripe':
+            elif payment_method == 'Sale' and gateway.lower() == 'stripe':
                 try:
                     amount = amount
                     print(amount)
@@ -411,11 +437,20 @@ class SalesAdmin(admin.ModelAdmin):
                     error_message = "An error occurred: {}".format(e)
                     print("Error:", error_message)
                     return JsonResponse({'error': error_message}, status=500)
-            elif payment_method == 'Authorize' and gateway == 'NMI':
+            elif payment_method == 'Authorize' and gateway.lower() == 'nmi':
                 try:
                     expirationDate = f"{expirationMonth}/{expirationYear}"
                     fields = {
                         'security_key': get_merchant_api_key(merchant_id),
+                        'firstname': sales.customer_first_name,
+                        'lastname': sales.customer_last_name,
+                        'company': sales.company,
+                        'address1': sales.customer_address,
+                        'state': sales.state,
+                        'zip': sales.zip_code,
+                        'country': "USA",
+                        'phone': sales.calling_no,
+                        'email': sales.customer_email,
                         'amount': amount,
                         'ccnumber': credit_card_number,
                         'ccexp': expirationDate,
@@ -431,35 +466,41 @@ class SalesAdmin(admin.ModelAdmin):
                 except json.JSONDecodeError:
                     return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
 
-            elif security == '2D' and payment_method == 'Sale' and gateway == 'NMI':
+            elif security == '2D' and payment_method == 'Sale' and gateway.lower() == 'nmi':
                 try:
                     expirationDate = f"{expirationMonth}/{expirationYear}"
                     fields = {
                         'security_key': get_merchant_api_key(merchant_id),
+                        'firstname': sales.customer_first_name,
+                        'lastname': sales.customer_last_name,
+                        'company': sales.company,
+                        'address1': sales.customer_address,
+                        'state': sales.state,
+                        'zip': sales.zip_code,
+                        'country': "USA",
+                        'phone': sales.calling_no,
+                        'email': sales.customer_email,
                         'amount': amount,
                         'ccnumber': credit_card_number,
                         'ccexp': expirationDate,
                         'cvv': cardCod,
-                        'order-description': 'Example Charge',
+                        'order-description': 'Charge',
 
                     }
-
+                    print(fields)
                     response = requests.post('https://secure.networkmerchants.com/api/transact.php', data=fields)
                     print("*********************")
-                    # Print the response
                     print(response.text)
-
                     return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
                 except json.JSONDecodeError:
                     return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
-
-            elif security == '3D' and gateway == 'NMI':
+            elif security == '3D' and gateway.lower() == 'nmi':
                 check = get_merchant_login_key(merchant_id)
                 print("****************")
                 print(check)
                 return redirect('/admin/Global_Core/sales/{}/payment/3D_secure/{}'.format(object_id, merchant_id))
 
-            elif payment_method == 'Sale' and gateway == 'PayPal':
+            elif payment_method == 'Sale' and gateway.lower() == 'paypal':
                 return redirect('/admin/Global_Core/sales/{}/payment/paypal/{}'.format(object_id, merchant_id))
             elif payment_method == 'Authorize' and gateway == 'PayPal':
                 return redirect(
@@ -494,13 +535,14 @@ class SalesAdmin(admin.ModelAdmin):
             print("*********")
             print(selected_card)
             today_date = datetime.now().date()
-            gateway = Gateway.objects.all()
+            gateways_queryset = Gateway.objects.all()
+            gateways_list = [gateway.merchant for gateway in gateways_queryset]
             context = {
                 'client_info': customer_info,
                 'today_date': today_date,
                 'cards': selected_card,
                 'account': selected_account,
-                'gateway': gateway,
+                'gateway': gateways_queryset,
                 'object_id': object_id
             }
             return render(request, "enter_payment_details.html", context)
@@ -531,6 +573,7 @@ class SalesAdmin(admin.ModelAdmin):
                 Merchant_Name=merchant
             )
             invoice_id = invoice.id
+
             context = {
                 'invoice_id': invoice_id,
                 'client_info': customer_info,
@@ -550,16 +593,12 @@ class SalesAdmin(admin.ModelAdmin):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-    def get_list_display(self, request):
-        list_display = list(super().get_list_display(request))
-        if request.user.is_superuser:
-            list_display.append('pay')
-        return list_display
 
 
 class DashboardAdmin(admin.ModelAdmin):
     class SalesChartDataView(TemplateView):
         template_name = 'sales_chart.html'
+
         def get_context_data(self, **kwargs):
             context = super().get_context_data(**kwargs)
             sales_data = Sales.objects.all().values('date', 'amount')

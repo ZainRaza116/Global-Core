@@ -37,9 +37,9 @@ settings.configure()
 SECRET_KEY = 'django-insecure-+m)(kslzi*om(rg!nm&%syw_n(p-dua2-90!sf_wpevjinunz+'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['contactcenter.quickresolvers.com']
 AUTH_USER_MODEL = 'Global_Core.CustomUser'
 
 
