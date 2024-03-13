@@ -99,20 +99,33 @@ class CardInlineFormSet(BaseInlineFormSet):
 
 class CardInline(admin.StackedInline):
     model = Card
-    extra = 1
+    extra = 0
     formset = CardInlineFormSet
 
 
 class BankAccountInline(admin.StackedInline):
     model = BankAccount
-    extra = 1
+    extra = 0
     forms = AccountInlineFormSet
 
 
 class SalesAdmin(admin.ModelAdmin):
     change_form_template = 'admin/sales/change_form.html'
-
     inlines = [CardInline, BankAccountInline]
+
+    # def get_inline_instances(self, request, obj=None):
+    #     inline_instances = []
+    #     if obj:
+    #         # If editing an existing object
+    #         if obj.payment_method == 'card':
+    #             inline_instances.append(CardInline(self.model, self.admin_site))
+    #         elif obj.payment_method == 'account':
+    #             inline_instances.append(BankAccountInline(self.model, self.admin_site))
+    #     else:
+    #         inline_instances.append(CardInline(self.model, self.admin_site))
+    #         inline_instances.append(BankAccountInline(self.model, self.admin_site))
+    #     return inline_instances
+
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
@@ -131,6 +144,13 @@ class SalesAdmin(admin.ModelAdmin):
     def gets_queryset(self, request):
         self.request = request
         return super().get_queryset(request)
+
+    def get_list_display(self, request):
+        if request.user.is_superuser:
+            return ['customer_name', "customer_address", "amount", "payment_method", "added_by", "pay",
+                    "custom_action12"]
+        else:
+            return ['customer_name', "customer_address", "amount", "payment_method", "added_by", "custom_action12"]
 
     def pay(self, obj):
         payment_image_url = '/static/credit-card.png'
@@ -274,7 +294,6 @@ class SalesAdmin(admin.ModelAdmin):
                 return render(request, 'error.html', {'error_message': str(e)})
 
     def secure(self, request, object_id, merchant_id):
-
         if request.method == 'POST':
             try:
                 print(request.body)
@@ -494,13 +513,14 @@ class SalesAdmin(admin.ModelAdmin):
             print("*********")
             print(selected_card)
             today_date = datetime.now().date()
-            gateway = Gateway.objects.all()
+            gateways_queryset = Gateway.objects.all()
+            gateways_list = [gateway.merchant for gateway in gateways_queryset]
             context = {
                 'client_info': customer_info,
                 'today_date': today_date,
                 'cards': selected_card,
                 'account': selected_account,
-                'gateway': gateway,
+                'gateway': gateways_queryset,
                 'object_id': object_id
             }
             return render(request, "enter_payment_details.html", context)
@@ -531,6 +551,7 @@ class SalesAdmin(admin.ModelAdmin):
                 Merchant_Name=merchant
             )
             invoice_id = invoice.id
+
             context = {
                 'invoice_id': invoice_id,
                 'client_info': customer_info,
@@ -550,16 +571,12 @@ class SalesAdmin(admin.ModelAdmin):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-    def get_list_display(self, request):
-        list_display = list(super().get_list_display(request))
-        if request.user.is_superuser:
-            list_display.append('pay')
-        return list_display
 
 
 class DashboardAdmin(admin.ModelAdmin):
     class SalesChartDataView(TemplateView):
         template_name = 'sales_chart.html'
+
         def get_context_data(self, **kwargs):
             context = super().get_context_data(**kwargs)
             sales_data = Sales.objects.all().values('date', 'amount')

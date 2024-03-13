@@ -2,67 +2,112 @@
 {% load static %}
 
 {% block admin_change_form_document_ready %}
-    {{ block.super }}
-    <script>
+{{ block.super }}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        window.onload = function () {
+            var paymentMethod = document.getElementById('id_payment_method').value;
 
-            document.addEventListener('DOMContentLoaded', function() {
-            // Function to show/hide fields based on selected payment method
-            function toggleFields() {
-                var paymentMethod = document.getElementById('id_payment_method').value;
-                console.log(paymentMethod);
-
-                // Toggle fields for cards
-                var cardFormset = document.querySelector('.inline-related.dynamic-Card');
-                if (cardFormset) {
-                    cardFormset.id = 'card-formset';  // Add ID to the card formset
-                    cardFormset.style.display = paymentMethod === 'card' ? 'block' : 'none';
-                    alert("you are in card")
+            if (paymentMethod === "card") {
+                var h2Elements = document.getElementsByTagName('h2');
+                for (var i = 0; i < h2Elements.length; i++) {
+                    h2Elements[1].style.display = 'none';
+                    h2Elements[0].style.display = 'block';
                 }
 
-                // Toggle fields for accounts
-                var accountFormset = document.querySelector('.inline-related.dynamic-Accounts');
-                if (accountFormset) {
-                    accountFormset.id = 'account-formset';  // Add ID to the account formset
-                    accountFormset.style.display = paymentMethod === 'account' ? 'block' : 'none';
-                     alert("you are in account")
+                var addRowsElements = document.getElementsByClassName('add-row');
+                for (var i = 0; i < addRowsElements.length; i++) {
+                    addRowsElements[1].style.display = 'none';
+                    addRowsElements[0].style.display = 'block';
+                }
+            } else {
+                var h2Elements = document.getElementsByTagName('h2');
+                for (var i = 0; i < h2Elements.length; i++) {
+                    h2Elements[0].style.display = 'none';
+                    h2Elements[1].style.display = 'block';
                 }
 
-                // Account fields
-                toggleFieldVisibility('account_name', paymentMethod === 'account');
-                toggleFieldVisibility('checking_acc', paymentMethod === 'account');
-                toggleFieldVisibility('routing_no', paymentMethod === 'account');
-                toggleFieldVisibility('checking_no', paymentMethod === 'account');
-                toggleFieldVisibility('account_address', paymentMethod === 'account');
-                toggleFieldVisibility("account_to_be_used", paymentMethod === 'account');
-                // Card fields
-                toggleFieldVisibility('card_name', paymentMethod === 'card');
-                toggleFieldVisibility('billing_address', paymentMethod === 'card');
-                toggleFieldVisibility('card_no', paymentMethod === 'card');
-                toggleFieldVisibility('expiry_month', paymentMethod === 'card');
-                toggleFieldVisibility('expiry_year', paymentMethod === 'card');
-                toggleFieldVisibility('cvv', paymentMethod === 'card');
-                toggleFieldVisibility('gift_card', paymentMethod === 'card');
-                toggleFieldVisibility('card_to_be_used', paymentMethod === 'card');
+                var addRowsElements = document.getElementsByClassName('add-row');
+                for (var i = 0; i < addRowsElements.length; i++) {
+                    addRowsElements[0].style.display = 'none';
+                    addRowsElements[1].style.display = 'block';
+                }
             }
+        };
+        // Function to show/hide fields based on selected payment method
+        function toggleFields() {
+            var paymentMethod = document.getElementById('id_payment_method').value;
+            if (paymentMethod === "card") {
+                var h2Elements = document.getElementsByTagName('h2');
+                for (var i = 0; i < h2Elements.length; i++) {
+                    h2Elements[1].style.display = 'none';
+                    h2Elements[0].style.display = 'block';
+                }
+                var addRowsElements = document.getElementsByClassName('add-row');
+                for (var i = 0; i < addRowsElements.length; i++) {
+                    addRowsElements[1].style.display = 'none';
+                    addRowsElements[0].style.display = 'block';
+                }
+            } else {
+                var h2Elements = document.getElementsByTagName('h2');
+                var addRowsElements = document.getElementsByClassName('add-row');
+                for (var i = 0; i < h2Elements.length; i++) {
+                    h2Elements[0].style.display = 'none';
+                    h2Elements[1].style.display = 'block';
+                }
+                for (var i = 0; i < addRowsElements.length; i++) {
+                    addRowsElements[0].style.display = 'none';
+                    addRowsElements[1].style.display = 'block';
+                }
+            }
+            // Toggle fields for cards
+            var cardFormset = document.querySelector('.inline-related.dynamic-Card');
+            if (cardFormset) {
+                cardFormset.id = 'card-formset';  // Add ID to the card formset
+                cardFormset.style.display = paymentMethod === 'card' ? 'block' : 'none';
+            }
+            // Toggle fields for accounts
+            var accountFormset = document.querySelector('.inline-related.dynamic-Accounts');
+            if (accountFormset) {
+                accountFormset.id = 'account-formset';  // Add ID to the account formset
+                accountFormset.style.display = paymentMethod === 'account' ? 'block' : 'none';
+            }
+            // Account fields
+            toggleFieldVisibility('account_name', paymentMethod === 'account');
+            toggleFieldVisibility('checking_acc', paymentMethod === 'account');
+            toggleFieldVisibility('routing_no', paymentMethod === 'account');
+            toggleFieldVisibility('checking_no', paymentMethod === 'account');
+            toggleFieldVisibility('account_address', paymentMethod === 'account');
+            toggleFieldVisibility("account_to_be_used", paymentMethod === 'account');
+            // Card fields
+            toggleFieldVisibility('card_name', paymentMethod === 'card');
+            toggleFieldVisibility('billing_address', paymentMethod === 'card');
+            toggleFieldVisibility('card_no', paymentMethod === 'card');
+            toggleFieldVisibility('expiry_month', paymentMethod === 'card');
+            toggleFieldVisibility('expiry_year', paymentMethod === 'card');
+            toggleFieldVisibility('cvv', paymentMethod === 'card');
+            toggleFieldVisibility('gift_card', paymentMethod === 'card');
+            toggleFieldVisibility('card_to_be_used', paymentMethod === 'card');
+        }
 
-            // Function to toggle visibility of a field
-            function toggleFieldVisibility(fieldName, show) {
+        // Function to toggle visibility of a field
+        function toggleFieldVisibility(fieldName, show) {
             var field = document.querySelector('.field-' + fieldName);
             if (field) {
-            field.style.display = show ? '' : 'none';
-        }
+                field.style.display = show ? '' : 'none';
+            }
         }
 
-            // Call the toggleFields function on page load
-            toggleFields();
+        // Call the toggleFields function on page load
+        toggleFields();
 
-            // Call the toggleFields function whenever the payment method field changes
-            document.getElementById('id_payment_method').addEventListener('change', function() {
+        // Call the toggleFields function whenever the payment method field changes
+        document.getElementById('id_payment_method').addEventListener('change', function () {
             toggleFields();
         });
 
-            // Function to add card fields
-            function addCardFields() {
+        // Function to add card fields
+        function addCardFields() {
             // Get the card container element
             var cardContainer = document.getElementById("card-container");
 
@@ -73,17 +118,17 @@
             cardContainer.appendChild(cardTemplate);
         }
 
-            // Add event listener to the "Add Card" button
-            var addCardButton = document.getElementById("add-card-button");
-            // addCardButton.addEventListener("click", addCardFields);
+        // Add event listener to the "Add Card" button
+        var addCardButton = document.getElementById("add-card-button");
+        // addCardButton.addEventListener("click", addCardFields);
 
-                document.addEventListener('DOMContentLoaded', function() {
-    var accountFormset = document.getElementById('account-formset');
-    if (accountFormset) {
-        accountFormset.style.display = "none";
-    }
-});
+        document.addEventListener('DOMContentLoaded', function () {
+            var accountFormset = document.getElementById('account-formset');
+            if (accountFormset) {
+                accountFormset.style.display = "none";
+            }
         });
+    });
 
 </script>
 {% endblock %}
@@ -103,7 +148,8 @@
         }
     }
 </style>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
 <div id="card-container">
     <template id="card-template">
         <div class="card-fields" style="display: flex; flex-direction: column">
@@ -124,5 +170,10 @@
         </div>
     </template>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4"
+    crossorigin="anonymous"></script>
 {% endblock %}
+
+
+

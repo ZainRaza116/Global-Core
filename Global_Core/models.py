@@ -195,7 +195,8 @@ class Card(models.Model):
     card_no = models.CharField(
         max_length=255,
         verbose_name='Card Number',
-        validators=[validate_credit_card_number]
+        validators=[validate_credit_card_number],
+        blank=True
     )
     expiry_month = models.IntegerField(
         verbose_name='Expiry Month',
@@ -226,6 +227,21 @@ class Card(models.Model):
             Card.objects.filter(sales=self.sales).exclude(id=self.id).update(card_to_be_used=False)
         super().save(*args, **kwargs)
 
+    def full_clean(self, *args, **kwargs):
+        super().full_clean(*args, **kwargs)
+        print("super")
+        if not self.payment_method == 'card':
+            # Exclude Card inline form validation if payment method is not 'card'
+            for card in self.cards.all():
+                try:
+                    card.full_clean()
+                except ValidationError as e:
+                    self._update_errors(e)
+
+    def _update_errors(self, validation_error):
+        for field, errors in validation_error.error_dict.items():
+            for error in errors:
+                self.add_error(field, error)
 
 class PaymentDetail(models.Model):
     sale = models.OneToOneField(Sales, on_delete=models.CASCADE, related_name='payment_detail')
