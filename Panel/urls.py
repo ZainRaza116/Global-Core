@@ -19,7 +19,7 @@ from django.urls import path, include
 
 admin.site.site_header = 'Global Core'
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('cms/', admin.site.urls),
     path('', include('Global_Core.urls')),
     # path('paypal/', include("paypal.standard.ipn.urls")),
 ]
