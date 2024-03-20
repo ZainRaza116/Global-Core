@@ -608,6 +608,8 @@ class DashboardAdmin(admin.ModelAdmin):
             context['sales_data_json'] = json.dumps(sales_data_list)
             return context
 
+class InvoiceAdmin(admin.ModelAdmin):
+        list_display = ['sale', 'payment', 'security', 'gateway','Merchant_Name']
 
 admin.site.register(Sales, SalesAdmin)
 admin.site.register(Expenses, ExpensesAdmin)
@@ -619,4 +621,4 @@ admin.site.register(Gateway, GatewayAdmin)
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Dashboard, DashboardAdmin)
 # admin.site.register(urls)
-admin.site.register(Invoice)
+admin.site.register(Invoice, InvoiceAdmin)

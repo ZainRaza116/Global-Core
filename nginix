@@ -1,5 +1,5 @@
 server {
-    listen 8001;
+    listen 8080;
     server_name 209.145.52.128;
 
     location = /favicon.ico { access_log off; log_not_found off; }
@@ -9,6 +9,6 @@ server {
 
     location / {
         include proxy_params;
-        proxy_pass http://http://209.145.52.128:8001
+        proxy_pass http://http://209.145.52.128:8080
     }
 }
