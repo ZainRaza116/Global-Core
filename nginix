@@ -1,0 +1,14 @@
+server {
+    listen 8001;
+    server_name 209.145.52.128;
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location /static/ {
+        root /var/Globalcore-Panel/Portal/Global-Core/;
+    }
+
+    location / {
+        include proxy_params;
+        proxy_pass http://http://209.145.52.128:8001
+    }
+}

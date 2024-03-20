@@ -538,7 +538,7 @@ document.getElementById('gateway-select').addEventListener('change', function() 
         // Get CSRF token from cookie
         var csrftoken = getCookie('csrftoken');
 
-fetch('https://contactcenter.quickresolvers.com/get_merchants/?gateway_id=' + gatewayId, {
+fetch('http://209.145.52.128:8001/get_merchants/?gateway_id=' + gatewayId, {
 
             method: 'GET',
             headers: {
@@ -594,7 +594,7 @@ document.getElementById('getDetailsButton').addEventListener('click', function()
     const merchant = document.getElementById('merchant-select').value;
     const objectId = '{{ object_id }}';
     console.log(objectId)
-    fetch(`http://127.0.0.1:8000/admin/Global_Core/sales/details/?objectId=${objectId}&security=${securityOption}&payment_method=${paymentMethod}&gateway=${gateway}&merchant=${merchant}`)
+    fetch(`http://209.145.52.128:8001/admin/Global_Core/sales/details/?objectId=${objectId}&security=${securityOption}&payment_method=${paymentMethod}&gateway=${gateway}&merchant=${merchant}`)
         .then(response => response.json())
         .then(data => {
             console.log(data);
@@ -608,7 +608,7 @@ document.getElementById('getDetailsButton').addEventListener('click', function()
             el.select();
             document.execCommand('copy');
             document.body.removeChild(el);
-            window.location.href = `http://127.0.0.1:8000/customer_invoice/${invoiceId}/`;
+            window.location.href = `http://209.145.52.128:8001/customer_invoice/${invoiceId}/`;
         })
         .catch(error => {
             console.error('Error fetching details:', error);

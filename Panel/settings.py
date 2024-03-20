@@ -37,9 +37,9 @@ settings.configure()
 SECRET_KEY = 'django-insecure-+m)(kslzi*om(rg!nm&%syw_n(p-dua2-90!sf_wpevjinunz+'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = ['contactcenter.quickresolvers.com']
+ALLOWED_HOSTS = ['209.145.52.128']
 AUTH_USER_MODEL = 'Global_Core.CustomUser'
 
 
@@ -57,6 +57,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -92,8 +93,8 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
