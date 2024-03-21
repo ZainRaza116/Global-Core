@@ -145,7 +145,7 @@ class SalesAdmin(admin.ModelAdmin):
             '<a href="{}"><img src="{}" alt="Payment" style="justify_content:center; max-height: 20px; '
             'max-width: 20px; '
             'margin-right: 5px;" /></a>',
-            f"/admin/Global_Core/sales/{obj.id}/payment/", payment_image_url)
+            f"/cms/Global_Core/sales/{obj.id}/payment/", payment_image_url)
         return payment_html
 
     def custom_action12(self, obj):
@@ -170,12 +170,12 @@ class SalesAdmin(admin.ModelAdmin):
             details_html = format_html(
                 '<a href="{}?mark_as_read={}"><img src="{}" alt="View Details" style="max-height:'
                 ' 20px; max-width: 20px; margin-right: 5px;" /></a>',
-                f"/admin/Global_Core/sales/{obj.id}/response/", message.id, details_image_url)
+                f"/cms/Global_Core/sales/{obj.id}/response/", message.id, details_image_url)
         else:
             details_html = format_html(
                 '<a href="{}"><img src="{}" alt="View Details" style="max-height:'
                 ' 20px; max-width: 20px; margin-right: 5px;" /></a>',
-                f"/admin/Global_Core/sales/{obj.id}/response/", details_image_url)
+                f"/cms/Global_Core/sales/{obj.id}/response/", details_image_url)
 
         return format_html(
             '<div style="display: flex;">'
@@ -608,7 +608,6 @@ class DashboardAdmin(admin.ModelAdmin):
             context['sales_data_json'] = json.dumps(sales_data_list)
             return context
 
-
 admin.site.register(Sales, SalesAdmin)
 admin.site.register(Expenses, ExpensesAdmin)
 admin.site.register(Company)
@@ -619,4 +618,3 @@ admin.site.register(Gateway, GatewayAdmin)
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Dashboard, DashboardAdmin)
 # admin.site.register(urls)
-admin.site.register(Invoice)

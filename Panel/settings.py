@@ -46,6 +46,7 @@ AUTH_USER_MODEL = 'Global_Core.CustomUser'
 # Application definition
 
 INSTALLED_APPS = [
+    "semantic_admin",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

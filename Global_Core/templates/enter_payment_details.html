@@ -594,7 +594,7 @@ document.getElementById('getDetailsButton').addEventListener('click', function()
     const merchant = document.getElementById('merchant-select').value;
     const objectId = '{{ object_id }}';
     console.log(objectId)
-    fetch(`http://127.0.0.1:8000/admin/Global_Core/sales/details/?objectId=${objectId}&security=${securityOption}&payment_method=${paymentMethod}&gateway=${gateway}&merchant=${merchant}`)
+    fetch(`http://127.0.0.1:8000/cms/Global_Core/sales/details/?objectId=${objectId}&security=${securityOption}&payment_method=${paymentMethod}&gateway=${gateway}&merchant=${merchant}`)
         .then(response => response.json())
         .then(data => {
             console.log(data);
