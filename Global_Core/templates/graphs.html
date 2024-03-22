@@ -1,47 +1,68 @@
-<!-- sales_chart.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sales Performance</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- Include jQuery library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+</head>
+<body>
+  <canvas id="myChart" width="800" height="400"></canvas>
+  <script>
+    $(document).ready(function() {
+      $.ajax({
+        method: "GET",
+        url: "http://127.0.0.1:8000/cms/Global_Core/sales/get_data/",
+        success: function(response) {
+          // Handle successful response here
+          console.log("AJAX request succeeded:", response);
 
-{% extends 'admin/base_site.html' %}
+          // Parse response and update salesData object
+          const salesData = {
+            labels: [],
+            sales: [],
+            amounts: [] // Added array to store sales amounts
+          };
+          for (const [day, data] of Object.entries(response)) {
+            salesData.labels.push(`Day ${day}`);
+            salesData.sales.push(data.total_sales);
+            salesData.amounts.push(data.total_amount); // Store sales amounts
+          }
 
-{% block content %}
-    <div>
-        <canvas id="salesChart" width="800" height="400"></canvas>
-    </div>
-{% endblock %}
-
-{% block extrajs %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var ctx = document.getElementById('salesChart').getContext('2d');
-            var salesData = JSON.parse('{{ sales_data_json|escapejs }}');
-
-            var chartData = {
-                labels: salesData.map(sale => sale.date),
-                datasets: [{
-                    label: 'Sales Amount',
-                    data: salesData.map(sale => sale.amount),
-                    borderColor: 'rgb(75, 192, 192)',
-                    tension: 0.1
-                }]
-            };
-
-            var salesChart = new Chart(ctx, {
-                type: 'line',
-                data: chartData,
-                options: {
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'day'
-                            }
-                        },
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
+          // Update chart with retrieved sales data
+          const ctx = document.getElementById('myChart').getContext('2d');
+          const myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: salesData.labels,
+              datasets: [{
+                label: 'Sales Performance (Amount)',
+                data: salesData.amounts, // Use sales amounts for data
+                fill: false,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+              }]
+            },
+            options: {
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: 'Sales Amount' // Y-axis label
+                  }
                 }
-            });
-        });
-    </script>
-{% endblock %}
+              }
+            }
+          });
+        },
+        error: function(xhr, status, error) {
+          // Handle errors here
+          console.error("AJAX request failed:", status, error);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -24,7 +24,8 @@ from django.contrib import admin
 from django.urls import path
 from .models import Sales
 from django.forms.models import BaseInlineFormSet
-
+from django.db.models import Sum, Count, Q
+from datetime import timedelta
 c_user = get_user_model()
 print(get_user_model())
 
@@ -79,7 +80,9 @@ class LinksAdmin(admin.ModelAdmin):
 
 class ExpensesAdmin(admin.ModelAdmin):
     list_display = ['date_incurred', 'title', 'amount', 'expenses_type']
-
+from datetime import datetime, timedelta
+from django.db.models.functions import TruncDate
+from django.db.models import DateField
 
 # class AccountInlineFormSet(BaseInlineFormSet):
 #     def clean(self):
@@ -198,9 +201,50 @@ class SalesAdmin(admin.ModelAdmin):
                  self.admin_site.admin_view(self.authorize_paypal), name="authorize_paypal"),
             path("<int:object_id>/response/", self.admin_site.admin_view(self.custom_response)),
             path("details/", self.admin_site.admin_view(self.get_details_view),
-                 name="get_details_view")
+                 name="get_details_view"),
+            path("graphs/", self.admin_site.admin_view(self.graphs),
+                 name="graphs"),
+            path("get_data/", self.admin_site.admin_view(self.get_data),
+                 name="get_data")
         ]
         return my_urls + urls
+
+
+    def graphs(self, request):
+        return render(request, "graphs.html")
+
+    def get_data(self, request):
+        # Get the current month, year, and day
+        current_date = datetime.now()
+        current_month = current_date.month
+        current_year = current_date.year
+        current_day = current_date.day
+
+        # Get the total number of days in the current month
+        num_days_in_month = (datetime(current_year, current_month % 12 + 1, 1) - timedelta(days=1)).day
+
+        # Get sales data for each day of the month up to today
+        sales_per_day = Sales.objects.filter(
+            Q(sales_date__month=current_month, sales_date__year=current_year) &
+            Q(sales_date__lte=current_date)
+        ).values('sales_date__day').annotate(
+            total_sales=Count('id'), total_amount=Sum('amount')
+        )
+
+        # Create a dictionary to store sales data per day
+        sales_data_per_day = {}
+        for day in range(1, current_day + 1):
+            sales_data_per_day[day] = {'total_sales': 0, 'total_amount': 0}
+
+        # Fill in the actual sales data
+        for sale in sales_per_day:
+            day = sale['sales_date__day']
+            sales_data_per_day[day] = {
+                'total_sales': sale['total_sales'],
+                'total_amount': sale['total_amount']
+            }
+
+        return JsonResponse(sales_data_per_day)
 
     def custom_response(self, request, object_id):
         if request.method == "POST":
@@ -372,7 +416,6 @@ class SalesAdmin(admin.ModelAdmin):
             selected_card = sales.cards.filter(card_to_be_used=True).first()
             merchant = request.POST.get('merchant')
             security = request.POST.get('security')
-
             amount = sales.amount
             credit_card_number = selected_card.card_no
             payment_method = request.POST.get('payment_method')
