@@ -1,4 +1,5 @@
 import requests
+from django.db.models import Count, Sum, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.utils.html import format_html
@@ -10,7 +11,7 @@ from .models import CustomUser
 from django.contrib.auth import get_user_model
 from django import forms
 from django.contrib.auth.models import Group
-from datetime import datetime
+from datetime import datetime, timedelta
 import lxml.etree as ET
 from .authorizepayment import authorize_credit_card, charge_credit_card
 from .stripe_payment import authorize_stripe, charge_stripe
@@ -24,8 +25,7 @@ from django.contrib import admin
 from django.urls import path
 from .models import Sales
 from django.forms.models import BaseInlineFormSet
-from django.db.models import Sum, Count, Q
-from datetime import timedelta
+
 c_user = get_user_model()
 print(get_user_model())
 
@@ -80,9 +80,7 @@ class LinksAdmin(admin.ModelAdmin):
 
 class ExpensesAdmin(admin.ModelAdmin):
     list_display = ['date_incurred', 'title', 'amount', 'expenses_type']
-from datetime import datetime, timedelta
-from django.db.models.functions import TruncDate
-from django.db.models import DateField
+
 
 # class AccountInlineFormSet(BaseInlineFormSet):
 #     def clean(self):
@@ -123,9 +121,9 @@ class SalesAdmin(admin.ModelAdmin):
             form.base_fields['added_by'].initial = request.user.id
         return form
 
-    def get_inline_instances(self, request, obj=None):
-        inline_instances = super().get_inline_instances(request, obj)
-        return inline_instances
+    # def get_inline_instances(self, request, obj=None):
+    #     inline_instances = super().get_inline_instances(request, obj)
+    #     return inline_instances
 
     def get_queryset(self, request):
         user = request.user
@@ -202,16 +200,66 @@ class SalesAdmin(admin.ModelAdmin):
             path("<int:object_id>/response/", self.admin_site.admin_view(self.custom_response)),
             path("details/", self.admin_site.admin_view(self.get_details_view),
                  name="get_details_view"),
-            path("graphs/", self.admin_site.admin_view(self.graphs),
-                 name="graphs"),
             path("get_data/", self.admin_site.admin_view(self.get_data),
-                 name="get_data")
+                 name="get_data"),
+            path("get_more_data/", self.admin_site.admin_view(self.get_more_data),
+                 name="get_more_data")
         ]
         return my_urls + urls
 
+    def get_more_data(self, request):
+        current_date = datetime.now()
+        current_month = current_date.month
+        current_year = current_date.year
 
-    def graphs(self, request):
-        return render(request, "graphs.html")
+        # Initialize response data
+        response_data = {}
+
+        # Check if the user is a superuser
+        if request.user.is_superuser:
+            # Get total sales count for the current month
+            total_sales_count = Sales.objects.filter(
+                sales_date__month=current_month,
+                sales_date__year=current_year
+            ).count()
+
+            # Get active users count
+            active_users_count = CustomUser.objects.filter(is_active=True).count()
+
+            # Get total revenue for the current month
+            total_revenue = Sales.objects.filter(
+                sales_date__month=current_month,
+                sales_date__year=current_year
+            ).aggregate(total_amount=Sum('amount'))['total_amount'] or 0
+
+            # Construct response data with totals
+            response_data = {
+                'total_sales_count': total_sales_count,
+                'active_users_count': active_users_count,
+                'total_revenue': total_revenue
+            }
+        else:
+            # Get total sales count for the current month for the current user
+            total_sales_count = Sales.objects.filter(
+                sales_date__month=current_month,
+                sales_date__year=current_year,
+                added_by=request.user  # Assuming 'added_by' is the correct field representing the user
+            ).count()
+
+            # Get total revenue for the current month for the current user
+            total_revenue = Sales.objects.filter(
+                sales_date__month=current_month,
+                sales_date__year=current_year,
+                added_by=request.user
+            ).aggregate(total_amount=Sum('amount'))['total_amount'] or 0
+
+            # Construct response data with user-specific data
+            response_data = {
+                'total_sales_count': total_sales_count,
+                'total_revenue': total_revenue
+            }
+
+        return JsonResponse(response_data)
 
     def get_data(self, request):
         # Get the current month, year, and day
@@ -220,19 +268,29 @@ class SalesAdmin(admin.ModelAdmin):
         current_year = current_date.year
         current_day = current_date.day
 
-        # Get the total number of days in the current month
-        num_days_in_month = (datetime(current_year, current_month % 12 + 1, 1) - timedelta(days=1)).day
+        # Initialize response data
+        sales_data_per_day = {}
 
-        # Get sales data for each day of the month up to today
-        sales_per_day = Sales.objects.filter(
-            Q(sales_date__month=current_month, sales_date__year=current_year) &
-            Q(sales_date__lte=current_date)
-        ).values('sales_date__day').annotate(
-            total_sales=Count('id'), total_amount=Sum('amount')
-        )
+        # Check if the user is a superuser
+        if request.user.is_superuser:
+            # Get sales data for each day of the month up to today for all users
+            sales_per_day = Sales.objects.filter(
+                Q(sales_date__month=current_month, sales_date__year=current_year) &
+                Q(sales_date__lte=current_date)
+            ).values('sales_date__day').annotate(
+                total_sales=Count('id'), total_amount=Sum('amount')
+            )
+        else:
+            # Get sales data for the current user for each day of the month up to today
+            sales_per_day = Sales.objects.filter(
+                Q(sales_date__month=current_month, sales_date__year=current_year) &
+                Q(sales_date__lte=current_date) &
+                Q(added_by=request.user)  # Assuming 'user' is the field linking sales to users
+            ).values('sales_date__day').annotate(
+                total_sales=Count('id'), total_amount=Sum('amount')
+            )
 
         # Create a dictionary to store sales data per day
-        sales_data_per_day = {}
         for day in range(1, current_day + 1):
             sales_data_per_day[day] = {'total_sales': 0, 'total_amount': 0}
 
@@ -416,6 +474,7 @@ class SalesAdmin(admin.ModelAdmin):
             selected_card = sales.cards.filter(card_to_be_used=True).first()
             merchant = request.POST.get('merchant')
             security = request.POST.get('security')
+
             amount = sales.amount
             credit_card_number = selected_card.card_no
             payment_method = request.POST.get('payment_method')
@@ -651,6 +710,9 @@ class DashboardAdmin(admin.ModelAdmin):
             context['sales_data_json'] = json.dumps(sales_data_list)
             return context
 
+class InvoiceAdmin(admin.ModelAdmin):
+        list_display = ['sale', 'payment', 'security', 'gateway','Merchant_Name']
+
 admin.site.register(Sales, SalesAdmin)
 admin.site.register(Expenses, ExpensesAdmin)
 admin.site.register(Company)
@@ -661,3 +723,4 @@ admin.site.register(Gateway, GatewayAdmin)
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Dashboard, DashboardAdmin)
 # admin.site.register(urls)
+admin.site.register(Invoice, InvoiceAdmin)

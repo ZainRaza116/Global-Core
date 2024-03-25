@@ -23,27 +23,12 @@ class CustomUser(AbstractUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['salary', 'target', 'hiring_date']
     objects = UserManager()
+    class Meta:
+        verbose_name_plural = "Users"
 
 
 class Dashboard(models.Model):
     pass
-
-class Gateway(models.Model):
-    ACCOUNT_CHOICES = [
-        ('merchant', 'Merchant'),
-        ('Payment_portal', 'Payment Portal'),
-    ]
-    MERCHANT_CHOICES = [
-        ('full', 'Full'),
-        ('link', 'Link'),
-    ]
-
-    merchant = models.CharField(max_length=255, blank=False, null=False, verbose_name='Merchant')
-    merchant_dba = models.CharField(max_length=255, blank=False, null=False, verbose_name='Merchant DBA')
-    account_type = models.CharField(max_length=50, choices=ACCOUNT_CHOICES, verbose_name='Account Type')
-    merchant_type = models.CharField(max_length=50, choices=MERCHANT_CHOICES, verbose_name='Merchant Type')
-
-    def __str__(self): return self.merchant
 
 
 class Expenses(models.Model):
@@ -62,29 +47,42 @@ class Expenses(models.Model):
     notes = models.TextField(blank=True, null=True, verbose_name='Details')
 
     def __str__(self): return self.title
-
-
-class Links(models.Model):
-    merchant_link = models.ForeignKey(
-        Gateway,
-        on_delete=models.PROTECT,
-        verbose_name='Merchant Name',
-        default=0,
-        limit_choices_to={'merchant_type': 'link'}
-    )
-
-    link = models.CharField(max_length=255, blank=False, null=False, verbose_name='Link')
-    amount = models.FloatField(blank=False, null=False, verbose_name='Amount')
-
-    def __str__(self):
-        return str(self.merchant_link)
-
+    class Meta:
+        verbose_name_plural = "Expenses"
 
 class Company(models.Model):
     company_name = models.CharField(max_length=255, blank=False, null=False, verbose_name='Company Name')
 
     def __str__(self):
         return str(self.company_name)
+    class Meta:
+        verbose_name_plural = "Companies"
+
+class Gateway(models.Model):
+    ACCOUNT_CHOICES = [
+        ('merchant', 'Merchant'),
+        ('Payment_portal', 'Payment Portal'),
+    ]
+    MERCHANT_CHOICES = [
+        ('full', 'Full'),
+        ('link', 'Link'),
+    ]
+
+    merchant = models.CharField(max_length=255, blank=False, null=False, verbose_name='Merchant')
+    merchant_dba = models.ForeignKey(
+        Company,
+        on_delete=models.PROTECT,
+        verbose_name='merchant DBA',
+        related_name='merchant_gateways',
+        null=True,
+        blank=True,
+    )
+    account_type = models.CharField(max_length=50, choices=ACCOUNT_CHOICES, verbose_name='Account Type')
+    merchant_type = models.CharField(max_length=50, choices=MERCHANT_CHOICES, verbose_name='Merchant Type')
+
+    def __str__(self): return self.merchant
+    class Meta:
+        verbose_name_plural = "Gateways"
 
 
 class Sales(models.Model):
@@ -146,13 +144,12 @@ class Sales(models.Model):
     description = models.TextField(max_length=255, verbose_name='Description', null=True, blank=True)
     authorization = models.FileField(upload_to='sales_files/', verbose_name='Authorization', blank=True, null=True)
 
-    class Meta:
-        permissions = [
-            ('view_own_sales', 'Can view own sales'),
-        ]
 
     def __str__(self):
         return self.provider_name
+
+    class Meta:
+        verbose_name_plural = "Sales"
 
 
 class BankAccount(models.Model):
@@ -274,6 +271,8 @@ class Merchants(models.Model):
     )
     def __str__(self):
         return f"{self.merchant_link}"
+    class Meta:
+        verbose_name_plural = "Merchants"
 
 
 class Messages(models.Model):
@@ -306,3 +305,20 @@ class Invoice(models.Model):
     security = models.CharField(max_length=255, verbose_name='Security')
     gateway = models.CharField(max_length=255, verbose_name='Gateway')
     Merchant_Name = models.CharField(max_length=255, verbose_name='Merchant')
+
+class Links(models.Model):
+    merchant_link = models.ForeignKey(
+        Gateway,
+        on_delete=models.PROTECT,
+        verbose_name='Merchant Name',
+        default=0,
+        limit_choices_to={'merchant_type': 'link'}
+    )
+
+    link = models.CharField(max_length=255, blank=False, null=False, verbose_name='Link')
+    amount = models.FloatField(blank=False, null=False, verbose_name='Amount')
+
+    def __str__(self):
+        return str(self.merchant_link)
+    class Meta:
+        verbose_name_plural = "Links"
