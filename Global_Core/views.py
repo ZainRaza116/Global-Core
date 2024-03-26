@@ -1,3 +1,4 @@
+
 import requests
 import json
 from django.shortcuts import render, redirect, get_object_or_404
@@ -311,4 +312,3 @@ def mark_as_read(request, message_id):
         message.is_read = True
         message.save()
         return JsonResponse({'success': True})
-

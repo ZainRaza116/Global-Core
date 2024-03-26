@@ -58,6 +58,7 @@ class Company(models.Model):
     class Meta:
         verbose_name_plural = "Companies"
 
+
 class Gateway(models.Model):
     ACCOUNT_CHOICES = [
         ('merchant', 'Merchant'),

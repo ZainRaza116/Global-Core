@@ -25,8 +25,10 @@ from django.contrib import admin
 from django.urls import path
 from .models import Sales
 from django.forms.models import BaseInlineFormSet
-
+from .forms import SalesForm,CardForm
 c_user = get_user_model()
+from semantic_admin import SemanticStackedInline, SemanticTabularInline
+
 print(get_user_model())
 
 class CustomUserAdminForm(forms.ModelForm):
@@ -98,21 +100,21 @@ class ExpensesAdmin(admin.ModelAdmin):
 #             raise ValidationError("At least one card must be marked as in use.")
 
 
-class CardInline(admin.StackedInline):
+class CardInline(SemanticStackedInline):
     model = Card
     extra = 0
     # formset = CardInlineFormSet
+    form = CardForm
 
-
-class BankAccountInline(admin.StackedInline):
+class BankAccountInline(SemanticStackedInline):
     model = BankAccount
     extra = 0
     # forms = AccountInlineFormSet
 
-
 class SalesAdmin(admin.ModelAdmin):
     change_form_template = 'admin/sales/change_form.html'
     inlines = [CardInline, BankAccountInline]
+    form = SalesForm
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
@@ -135,10 +137,31 @@ class SalesAdmin(admin.ModelAdmin):
 
     def get_list_display(self, request):
         if request.user.is_superuser:
-            return ['customer_name', "customer_address", "amount", "payment_method", "added_by", "pay",
-                    "custom_action12"]
+            return ['customer_name', 'shortened_customer_address', 'formatted_amount', 'payment_method', 'modified_added_by', 'pay', 'payment_status_func', 'order_status_func','custom_action12']
         else:
-            return ['customer_name', "customer_address", "amount", "payment_method", "added_by", "custom_action12"]
+            return ['customer_name', 'customer_address', 'formatted_amount', 'payment_method', 'modified_added_by', 'payment_status_func', 'order_status_func','custom_action12']
+
+    def shortened_customer_address(self, obj):
+        words = obj.customer_address.split()
+        if len(words) >= 2:
+            return ' '.join(words[:2]) + '...'
+        else:
+            return obj.customer_address
+    shortened_customer_address.short_description = 'Address'
+
+    def formatted_amount(self, obj):
+        return f"${obj.amount:.2f}"
+    formatted_amount.short_description = 'Amount'
+
+    def modified_added_by(self, obj):
+        if obj.added_by and hasattr(obj.added_by, 'email'):
+            email = obj.added_by.email
+            if '@' in email:
+                username, domain = email.split('@')
+                return f"{username}@ ..."
+            return email
+        return None
+    modified_added_by.short_description = 'Added By'
 
     def pay(self, obj):
         payment_image_url = '/static/credit-card.png'
@@ -180,12 +203,42 @@ class SalesAdmin(admin.ModelAdmin):
 
         return format_html(
             '<div style="display: flex;">'
-            '{}{}'
+            '{}'
             '</div>',
-             details_html, status_html)
+             details_html)
 
-    custom_action12.short_description = 'Actions'
+    custom_action12.short_description = 'Messages'
 
+    def payment_status_func(self, obj):
+        payment_pic = '/static/payment-status.png'
+        payment_status = format_html(
+            '<a href="{}"><img src="{}" alt="View Details" style="max-height:'
+            ' 20px; max-width: 21px; margin: auto;" /></a>',
+            f"/cms/Global_Core/sales/{obj.id}/response/", payment_pic)
+
+        return format_html(
+            '<div style="display: flex; justify-content: center;">'
+            '{}'
+            '</div>',
+            payment_status)
+
+    payment_status_func.short_description = 'Payment Status'
+
+    def order_status_func(self, obj):
+        order_pic = '/static/clipboard.png'
+        order_status = format_html(
+            '<a href="{}"><img src="{}" alt="View Details" style="max-height:'
+            ' 20px; max-width: 21px; margin: auto;" /></a>',
+            f"/cms/Global_Core/sales/{obj.id}/response/", order_pic)
+
+        return format_html(
+            '<div style="display: flex; justify-content: center;">'
+            '{}'
+            '</div>',
+            order_status)
+
+    order_status_func.short_description = 'Order Status'
+    payment_status_func.short_description = 'Payment Status'
 
     def get_urls(self):
         urls = super().get_urls()
