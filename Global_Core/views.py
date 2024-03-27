@@ -14,7 +14,11 @@ from paypal.standard.forms import PayPalPaymentsForm
 from django.urls import reverse
 from paypalrestsdk import Payment
 from django.conf import settings
-
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
+from .models import Sales, CustomUser
+from django.views.decorators.csrf import csrf_exempt
 
 def charge_credit_card_view(request):
     if request.method == 'POST':
@@ -312,3 +316,31 @@ def mark_as_read(request, message_id):
         message.is_read = True
         message.save()
         return JsonResponse({'success': True})
+
+
+@csrf_exempt
+def add_associate_user(request, sale_id, user_id):
+    sale = get_object_or_404(Sales, pk=sale_id)
+    user = get_object_or_404(CustomUser, pk=user_id)
+    if user == sale.added_by:
+        return JsonResponse({'status': 'error', 'message': 'The Owner of the sale cannot be added as an associated user'},
+                            status=400)
+    # Check if the association already exists
+    if not SalesUserAssociation.objects.filter(sale=sale, user=user).exists():
+        SalesUserAssociation.objects.create(sale=sale, user=user)
+        return JsonResponse({'status': 'success', 'message': 'User added successfully'}, status=201)
+    else:
+        return JsonResponse({'status': 'error', 'message': 'User is already associated with this sale'}, status=400)
+
+@csrf_exempt
+def delete_associate_user(request, sale_id, user_id):
+    sale = get_object_or_404(Sales, pk=sale_id)
+    user = get_object_or_404(CustomUser, pk=user_id)
+
+    # Check if the association exists
+    association = SalesUserAssociation.objects.filter(sale=sale, user=user)
+    if association.exists():
+        association.delete()
+        return JsonResponse({'status': 'success', 'message': 'User deleted successfully'}, status=200)
+    else:
+        return JsonResponse({'status': 'error', 'message': 'User is not associated with this sale'}, status=400)

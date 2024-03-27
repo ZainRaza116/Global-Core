@@ -145,14 +145,14 @@ body{
 <body class="new-invoice">
     <!-- logo -->
     <div class="logo-main">
-        <img src="../../static/logo.png" width="185px" />
+        <img src="{{ invoice_object.sale.company.authorization.url }}" width="185px" />
     </div>
     <!-- address -->
     <div class="address-main">
-        <p style="text-align: center; text-transform: uppercase; font-weight: 700; font-size: 16px;">Global Core Communication</p>
-        <p style="text-align: center; text-transform: capitalize; font-size: 14px;">Abdalian Society Johar Town Block R1 Lahore, Pakistan</p>
-        <p style="text-align: center; text-transform: capitalize; font-size: 14px;">Phone: (92) 328-4812900 | Email: info@globalcorecommunications.com</p>
-        <p style="text-align: center; text-transform: capitalize; font-size: 14px;">www.golbalcorecommunications.com</p>
+        <p style="text-align: center; text-transform: uppercase; font-weight: 700; font-size: 16px;">{{ invoice_object.sale.company.company_name }}</p>
+        <p style="text-align: center; text-transform: capitalize; font-size: 14px;">{{ invoice_object.sale.company.company_address }}</p>
+        <p style="text-align: center; font-size: 14px;">Phone: {{ invoice_object.sale.company.company_phone }} | Email: {{ invoice_object.sale.company.company_email }} </p>
+        <p style="text-align: center; font-size: 14px;">{{ invoice_object.sale.company.company_website }}</p>
     </div>
     <!-- invoice-data -->
     <div class="invoice-data">

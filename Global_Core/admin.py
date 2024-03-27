@@ -132,12 +132,29 @@ class SalesAdmin(admin.ModelAdmin):
         if user.is_superuser:
             return super().get_queryset(request)
         else:
-            return Sales.objects.filter(added_by=user)
+            return Sales.objects.filter(
+                models.Q(added_by=user) |  # Filter for sales added by the user
+                models.Q(associate_users__user=user)  # Filter for sales where the user is part of associated users
+            ).distinct()
     #     return super().get_queryset(request)
+    def has_add_permission(self, request):
+        if not request.user.is_superuser:
+            return False
+        return True
+
+    def has_change_permission(self, request, obj=None):
+        if not request.user.is_superuser:
+            return False
+        return True
+
+    def has_delete_permission(self, request, obj=None):
+        if not request.user.is_superuser:
+            return False
+        return True
 
     def get_list_display(self, request):
         if request.user.is_superuser:
-            return ['customer_name', 'shortened_customer_address', 'formatted_amount', 'payment_method', 'modified_added_by', 'pay', 'payment_status_func', 'order_status_func','custom_action12']
+            return ['customer_name', 'shortened_customer_address', 'formatted_amount', 'payment_method', 'modified_added_by', 'payment_status_func', 'order_status_func','custom_action12']
         else:
             return ['customer_name', 'customer_address', 'formatted_amount', 'payment_method', 'modified_added_by', 'payment_status_func', 'order_status_func','custom_action12']
 
@@ -175,18 +192,21 @@ class SalesAdmin(admin.ModelAdmin):
     def custom_action12(self, obj):
         payment_image_url = '/static/credit-card.png'
         details_image_url = '/static/reply-message.png'
-        status_image_url = '/static/loading.png'
+        add_person_url = '/static/add-user.png'
 
-        if obj.status == 'pending' or obj.status == 'in_process':
-            status_html = format_html(
-                '<img src="{}" alt="Status" style="max-height: 20px; max-width: 20px; margin-right: 5px;'
-                ' cursor: pointer;" onclick="alert(\'You want to change your status to Completed?\')" />',
-                status_image_url)
-        else:
-            status_html = format_html(
-                '<a><img src="{}" alt="Status" style="max-height: 20px; max-width: 20px; '
-                'margin-right: 5px;" /></a>',
-                '/static/complete.png')
+        add_html = format_html(
+            '<a href="{}"><img src="{}" alt="Payment" style="justify_content:center; max-height: 20px; '
+            'max-width: 20px; '
+            'margin-right: 5px;" /></a>',
+            f"/cms/Global_Core/sales/{obj.id}/assign_user/", add_person_url)
+
+
+        payment_html = format_html(
+            '<a href="{}"><img src="{}" alt="Payment" style="justify_content:center; max-height: 20px; '
+            'max-width: 20px; '
+            'margin-right: 5px;" /></a>',
+            f"/cms/Global_Core/sales/{obj.id}/payment/", payment_image_url)
+
 
         message = obj.messages.first()
         if message and not message.is_read:
@@ -203,11 +223,11 @@ class SalesAdmin(admin.ModelAdmin):
 
         return format_html(
             '<div style="display: flex;">'
-            '{}'
+            '{} {} {}'
             '</div>',
-             details_html)
+             add_html, details_html, payment_html)
 
-    custom_action12.short_description = 'Messages'
+    custom_action12.short_description = 'Actions'
 
     def payment_status_func(self, obj):
         payment_pic = '/static/payment-status.png'
@@ -225,20 +245,16 @@ class SalesAdmin(admin.ModelAdmin):
     payment_status_func.short_description = 'Payment Status'
 
     def order_status_func(self, obj):
-        order_pic = '/static/clipboard.png'
-        order_status = format_html(
-            '<a href="{}"><img src="{}" alt="View Details" style="max-height:'
-            ' 20px; max-width: 21px; margin: auto;" /></a>',
-            f"/cms/Global_Core/sales/{obj.id}/response/", order_pic)
-
-        return format_html(
-            '<div style="display: flex; justify-content: center;">'
-            '{}'
-            '</div>',
-            order_status)
+        status_html = ""
+        if obj.status == 'pending':
+            status_html = '<span style="color: orange; font-weight: bold;">Pending</span>'
+        elif obj.status == 'completed':
+            status_html = '<span style="color: green; font-weight: bold;">Completed</span>'
+        elif obj.status == 'in_process':
+            status_html = '<span style="color: blue; font-weight: bold;">In Process</span>'
+        return format_html(status_html)
 
     order_status_func.short_description = 'Order Status'
-    payment_status_func.short_description = 'Payment Status'
 
     def get_urls(self):
         urls = super().get_urls()
@@ -256,9 +272,26 @@ class SalesAdmin(admin.ModelAdmin):
             path("get_data/", self.admin_site.admin_view(self.get_data),
                  name="get_data"),
             path("get_more_data/", self.admin_site.admin_view(self.get_more_data),
-                 name="get_more_data")
+                 name="get_more_data"),
+            path("<int:object_id>/assign_user/", self.admin_site.admin_view(self.add_user),
+                 name="add_user"),
+
         ]
         return my_urls + urls
+
+
+    def add_user(self, request, object_id):
+        user_info = Sales.objects.get(pk=object_id)
+        users = CustomUser.objects.all()
+        associate_users = SalesUserAssociation.objects.filter(sale=user_info)
+        print(associate_users)
+        context ={
+            'user_info': user_info,
+            'users': users,
+            'associate_users': associate_users
+        }
+        return render(request, "add.html", context)
+
 
     def get_more_data(self, request):
         current_date = datetime.now()
@@ -363,8 +396,10 @@ class SalesAdmin(admin.ModelAdmin):
             if message_text:
                 sales = Sales.objects.get(pk=object_id)
                 message = Messages.objects.create(added_by=request.user, sale=sales, message=message_text)
-                return redirect('/admin/Global_Core/sales/')
+                print("no i am here")
+                return redirect('/cms/Global_Core/sales/')
         elif request.method == "GET" and 'mark_as_read' in request.GET:
+            print("i am here bud")
             message_id = request.GET.get('mark_as_read')
             message = Messages.objects.get(pk=message_id)
             message.is_read = True
@@ -766,6 +801,7 @@ class DashboardAdmin(admin.ModelAdmin):
 class InvoiceAdmin(admin.ModelAdmin):
         list_display = ['sale', 'payment', 'security', 'gateway','Merchant_Name']
 
+
 admin.site.register(Sales, SalesAdmin)
 admin.site.register(Expenses, ExpensesAdmin)
 admin.site.register(Company)
@@ -777,3 +813,4 @@ admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Dashboard, DashboardAdmin)
 # admin.site.register(urls)
 admin.site.register(Invoice, InvoiceAdmin)
+# admin.site.unregister(Group)

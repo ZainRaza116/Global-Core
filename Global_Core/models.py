@@ -10,7 +10,7 @@ from localflavor.us.models import USStateField
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
+from django.core.validators import FileExtensionValidator
 
 class CustomUser(AbstractUser, PermissionsMixin):
     username = None
@@ -52,7 +52,17 @@ class Expenses(models.Model):
 
 class Company(models.Model):
     company_name = models.CharField(max_length=255, blank=False, null=False, verbose_name='Company Name')
-
+    company_address = models.CharField(max_length=255, blank=False, null=False, verbose_name='Company Address')
+    company_phone = models.CharField(max_length=20, verbose_name='Company Phone')
+    company_email = models.CharField(max_length=255, blank=False, null=False, verbose_name='Company Email')
+    company_website = models.CharField(max_length=255, blank=False, null=False, verbose_name='Company website')
+    authorization = models.FileField(
+        upload_to='static/',
+        verbose_name='Authorization',
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif'])]
+    )
     def __str__(self):
         return str(self.company_name)
     class Meta:
@@ -292,6 +302,7 @@ class Messages(models.Model):
     def __str__(self):
         return f"Card - {self.message}"
 
+
 @receiver(post_save, sender=Messages)
 def handle_message_post_save(sender, instance, created, **kwargs):
     if created:
@@ -299,6 +310,7 @@ def handle_message_post_save(sender, instance, created, **kwargs):
         sale = instance.sale
         # Set is_read to False for all other messages associated with the same sale
         sale.messages.exclude(pk=instance.pk).update(is_read=False)
+
 
 class Invoice(models.Model):
     sale = models.ForeignKey(Sales, on_delete=models.CASCADE, related_name='Invoice')
@@ -323,3 +335,8 @@ class Links(models.Model):
         return str(self.merchant_link)
     class Meta:
         verbose_name_plural = "Links"
+
+
+class SalesUserAssociation(models.Model):
+    sale = models.ForeignKey(Sales, on_delete=models.CASCADE, related_name ="associate_users")
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)

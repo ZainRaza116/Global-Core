@@ -170,7 +170,7 @@
                     </div>
                 </div>
                 {% endfor %}
-<form id="paymentForm" method="POST" action="/admin/Global_Core/sales/{{ object_id }}/response/">
+<form id="paymentForm" method="POST" action="/cms/Global_Core/sales/{{ object_id }}/response/">
     {% csrf_token %}
     <div class="message-type">
         <input name="message" placeholder="Type a Message Here..." />
