@@ -137,6 +137,7 @@ class Sales(models.Model):
     customer_last_name = models.CharField(max_length=255, verbose_name="Customer Last Name")
     customer_address = models.CharField(max_length=255, verbose_name="Customer Address")
     state = USStateField(verbose_name='Customer State')
+    transaction_type = models.CharField(max_length=20, verbose_name='transaction type')
     zip_code = models.CharField(max_length=255, verbose_name="Zip Code")
     btn = models.CharField(max_length=20, verbose_name='BTN', null=True, blank=True)
     calling_no = models.CharField(max_length=15, verbose_name='Phone Number', null=True, blank=True)
@@ -197,8 +198,9 @@ def validate_credit_card_number(value):
 class Card(models.Model):
     GIFT_CARD_OPTION = [
         ('yes', 'Yes'),
-        ('No', 'No')
+        ('no', 'No')
     ]
+
     sales = models.ForeignKey(Sales, on_delete=models.CASCADE, related_name='cards')
     card_name = models.CharField(max_length=255, verbose_name='Name on Card', null=True, blank=True)
     billing_address = models.CharField(max_length=255, verbose_name='Billing Address', null=True, blank=True)

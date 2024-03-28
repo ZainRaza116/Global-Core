@@ -1,6 +1,6 @@
 import requests
 from django.db.models import Count, Sum, Q
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import redirect
 from django.utils.html import format_html
 from django.views.decorators.csrf import csrf_exempt
@@ -106,10 +106,12 @@ class CardInline(SemanticStackedInline):
     # formset = CardInlineFormSet
     form = CardForm
 
+
 class BankAccountInline(SemanticStackedInline):
     model = BankAccount
     extra = 0
     # forms = AccountInlineFormSet
+
 
 class SalesAdmin(admin.ModelAdmin):
     change_form_template = 'admin/sales/change_form.html'
@@ -180,6 +182,17 @@ class SalesAdmin(admin.ModelAdmin):
         return None
     modified_added_by.short_description = 'Added By'
 
+    # def get_exclude(self, request, obj=None):
+    #     # Exclude the 'transaction_type' field from the form
+    #     excludes = super().get_exclude(request, obj=obj) or ()
+    #     return excludes + ('transaction_type',)
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = list(super().get_readonly_fields(request, obj))
+        if obj and obj.transaction_type:
+            readonly_fields += [field.name for field in Sales._meta.fields]
+
+        return tuple(readonly_fields)
     def pay(self, obj):
         payment_image_url = '/static/credit-card.png'
         payment_html = format_html(
@@ -230,17 +243,15 @@ class SalesAdmin(admin.ModelAdmin):
     custom_action12.short_description = 'Actions'
 
     def payment_status_func(self, obj):
-        payment_pic = '/static/payment-status.png'
-        payment_status = format_html(
-            '<a href="{}"><img src="{}" alt="View Details" style="max-height:'
-            ' 20px; max-width: 21px; margin: auto;" /></a>',
-            f"/cms/Global_Core/sales/{obj.id}/response/", payment_pic)
 
-        return format_html(
-            '<div style="display: flex; justify-content: center;">'
-            '{}'
-            '</div>',
-            payment_status)
+        if obj.transaction_type == 'Sale':
+            payment_html = '<span style="color: Black; font-weight: bold;">Sale</span>'
+        elif obj.transaction_type == 'Authorize':
+            payment_html = '<span style="color: green; font-weight: bold;">Authorize</span>'
+        else:
+            payment_html = '<span style="color: Red; font-weight: bold;">Not Processed</span>'
+        return format_html(payment_html)
+
 
     payment_status_func.short_description = 'Payment Status'
 
@@ -496,12 +507,17 @@ class SalesAdmin(admin.ModelAdmin):
             try:
                 print(request.body)
                 json_data = json.loads(request.body)
+                print("bllklklklkl")
                 print(json_data)
-
+                card_exp_month = json_data['cardExpMonth'][:2]
+                card_exp_year = json_data['cardExpYear'][2:]
+                if len(card_exp_month) == 1:
+                    # Prepend '0' to the month to make it two digits
+                    card_exp_month = '0' + card_exp_month
                 fields = {
                     'security_key': get_merchant_api_key(merchant_id),
                     'ccnumber': json_data['cardNumber'],
-                    'ccexp': json_data['cardExpMonth'] + json_data['cardExpYear'][-2:],
+                    'ccexp': f"{card_exp_month}{card_exp_year}",
                     'amount': json_data['amount'],
                     'email': json_data['email'],
                     'phone': json_data['phone'],
@@ -521,8 +537,19 @@ class SalesAdmin(admin.ModelAdmin):
                 }
                 print(fields)
                 response = requests.post('https://secure.networkmerchants.com/api/transact.php', data=fields)
-
+                reponse = response.text
                 print(response.text)
+                pairs = reponse.split('&')
+                response_dict = {}
+                for pair in pairs:
+                    key, value = pair.split('=')
+                    response_dict[key] = value
+                response_value = response_dict.get('response')
+                print(response_value)
+                if response_value == '1':
+                    sales = Sales.objects.get(pk=object_id)
+                    sales.transaction_type = "Sale"
+                    sales.save()
                 return JsonResponse({'message': 'Data received successfully'})
             except json.JSONDecodeError:
                 return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
@@ -594,25 +621,45 @@ class SalesAdmin(admin.ModelAdmin):
             print(merchant_id)
             if payment_method == 'Sale' and gateway.lower() == 'authorize.net':
                 expirationDate = f"{expirationMonth}/{expirationYear}"
-                xml_response = charge_credit_card(amount, cardNumber, expirationDate, cardCod, firstName, lastName,
+                json_response = charge_credit_card(amount, cardNumber, expirationDate, cardCod, firstName, lastName,
                                                   company,
                                                   address, state, zip_code, merchant_id)
-                return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
+                transaction_type = json_response.get('transaction_type')  # Extract transaction type from xml_response
+                status = json_response.get('status')
 
+                if status == 'Success':
+                    sales = Sales.objects.get(pk=object_id)
+                    sales.transaction_type = transaction_type
+                    sales.save()
+                return JsonResponse(json_response)
             elif payment_method == 'Authorize' and gateway.lower() == 'authorize.net':
                 expirationDate = f"{expirationMonth}/{expirationYear}"
-                xml_response = authorize_credit_card(amount, cardNumber, expirationDate, cardCod, firstName, lastName,
+                json_response = authorize_credit_card(amount, cardNumber, expirationDate, cardCod, firstName, lastName,
                                                      company,
                                                      address, state, zip_code, merchant_id)
-                xml_string = ET.tostring(xml_response)
+                transaction_type = json_response.get('transaction_type')
+                status = json_response.get('status')
+
+                if status == 'Success':
+                    sales = Sales.objects.get(pk=object_id)
+                    sales.transaction_type = transaction_type
+                    sales.save()
+                return HttpResponseRedirect(request.path)
+
                 return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
             # **************************  STRIPE  ******************************
             elif payment_method == 'Authorize' and gateway.lower() == 'stripe':
                 try:
                     amount = amount
-                    print(amount)
-                    authorize_stripe(amount, merchant_id)
-                    return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
+
+                    charge_status = charge_stripe(amount, merchant_id)
+
+                    print(charge_status)
+                    if charge_status == "usd":
+                        sales = Sales.objects.get(pk=object_id)
+                        sales.transaction_type = "Authorize"
+                        sales.save()
+                    return HttpResponseRedirect(request.path)
                 except Exception as e:
                     error_message = "An error occurred: {}".format(e)
                     print("Error:", error_message)
@@ -620,13 +667,19 @@ class SalesAdmin(admin.ModelAdmin):
             elif payment_method == 'Sale' and gateway.lower() == 'stripe':
                 try:
                     amount = amount
-                    print(amount)
-                    charge_stripe(amount, merchant_id)
-                    return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
+
+                    charge_status = charge_stripe(amount, merchant_id)
+                    print("idiejdiej")
+                    print(charge_status)
+                    if charge_status == "usd":
+                        sales = Sales.objects.get(pk=object_id)
+                        sales.transaction_type = "Sale"
+                        sales.save()
+                    return HttpResponseRedirect(request.path)
                 except Exception as e:
                     error_message = "An error occurred: {}".format(e)
                     print("Error:", error_message)
-                    return JsonResponse({'error': error_message}, status=500)
+                    return HttpResponseRedirect(request.path)
             elif payment_method == 'Authorize' and gateway.lower() == 'nmi':
                 try:
                     expirationDate = f"{expirationMonth}/{expirationYear}"
@@ -650,9 +703,21 @@ class SalesAdmin(admin.ModelAdmin):
                     }
                     response = requests.post('https://secure.networkmerchants.com/api/transact.php', data=fields)
                     print("*********************")
+                    reponse = response.text
                     print(response.text)
+                    pairs = reponse.split('&')
+                    response_dict = {}
+                    for pair in pairs:
+                        key, value = pair.split('=')
+                        response_dict[key] = value
+                    response_value = response_dict.get('response')
+                    print(response_value)
+                    if response_value == '1':
+                        sales = Sales.objects.get(pk=object_id)
+                        sales.transaction_type = "Authorize"
+                        sales.save()
+                    return HttpResponseRedirect(request.path)
 
-                    return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
                 except json.JSONDecodeError:
                     return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
 
@@ -680,15 +745,27 @@ class SalesAdmin(admin.ModelAdmin):
                     print(fields)
                     response = requests.post('https://secure.networkmerchants.com/api/transact.php', data=fields)
                     print("*********************")
+                    reponse = response.text
                     print(response.text)
-                    return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
+                    pairs = reponse.split('&')
+                    response_dict = {}
+                    for pair in pairs:
+                        key, value = pair.split('=')
+                        response_dict[key] = value
+                    response_value = response_dict.get('response')
+                    print(response_value)
+                    if response_value == '1':
+                        sales = Sales.objects.get(pk=object_id)
+                        sales.transaction_type = "Sale"
+                        sales.save()
+                    return HttpResponseRedirect(request.path)
                 except json.JSONDecodeError:
                     return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
             elif security == '3D' and gateway.lower() == 'nmi':
                 check = get_merchant_login_key(merchant_id)
                 print("****************")
                 print(check)
-                return redirect('/admin/Global_Core/sales/{}/payment/3D_secure/{}'.format(object_id, merchant_id))
+                return redirect('/cms/Global_Core/sales/{}/payment/3D_secure/{}'.format(object_id, merchant_id))
 
             elif payment_method == 'Sale' and gateway.lower() == 'paypal':
                 return redirect('/admin/Global_Core/sales/{}/payment/paypal/{}'.format(object_id, merchant_id))

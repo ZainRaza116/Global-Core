@@ -82,7 +82,7 @@
         threeDSecureInterface.on('complete', function (e) {
             console.log("{{ merchant_id }}")
 
-            fetch('https://contactcenter.quickresolvers.com/admin/Global_Core/sales/{{ object_id }}/payment/3D_secure/{{ merchant_id }}',{
+            fetch('http://127.0.0.1:8000/cms/Global_Core/sales/4/payment/3D_secure/2',{
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

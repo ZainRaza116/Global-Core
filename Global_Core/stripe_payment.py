@@ -18,31 +18,37 @@ def charge_stripe(amount, merchant_id):
             description="Example charge"
         )
         print("Charge successful")
-        # Get the charge ID for reference
-        charge_id = charge.id
+        return charge.currency
     except stripe.error.CardError as e:
         # Since it's a decline, stripe.error.CardError will be caught
         print("Card declined")
+        return None
     except stripe.error.RateLimitError as e:
         # Too many requests made to the API too quickly
         print("Rate limit exceeded")
+        return None
     except stripe.error.InvalidRequestError as e:
         # Invalid parameters were supplied to Stripe's API
         print("Invalid parameters")
+        return None
     except stripe.error.AuthenticationError as e:
         # Authentication with Stripe's API failed
         # (maybe you changed API keys recently)
         print("Authentication failed")
+        return None
     except stripe.error.APIConnectionError as e:
         # Network communication with Stripe failed
         print("Network error")
+        return None
     except stripe.error.StripeError as e:
         # Display a very generic error to the user, and maybe send
         # yourself an email
         print("Something went wrong. Please try again.")
+        return None
     except Exception as e:
         # Something else happened, completely unrelated to Stripe
         print("Something went wrong. Please try again.")
+        return None
 
 
 def authorize_stripe(amount,merchant_id):
@@ -63,9 +69,13 @@ def authorize_stripe(amount,merchant_id):
                 charge_id,  # Charge ID obtained from the authorization
                 amount=amount_cents  # Amount to capture in cents
         )
+
         print("Authorization successful")
+
         # Get the charge ID for later capture
         charge_id = authorization.id
+
+        return authorization.currency
     except stripe.error.CardError as e:
         # Since it's a decline, stripe.error.CardError will be caught
         print("Card declined")

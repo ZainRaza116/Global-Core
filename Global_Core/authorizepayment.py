@@ -145,7 +145,12 @@ def charge_credit_card(amount, cardNumber , expirationDate , cardCod , firstName
     else:
         print('Null Response.')
 
-    return response
+    response_data = {
+        'transaction_type': 'Sale',
+        'status': 'Success' if response is not None and response.messages.resultCode == "Ok" else 'Failed'
+    }
+
+    return response_data
 
 
 # if (os.path.basename(__file__) == os.path.basename(sys.argv[0])):
@@ -289,7 +294,12 @@ def authorize_credit_card(amount, cardNumber , expirationDate , cardCod , firstN
     else:
         print('Null Response.')
 
-    return response
+    response_data = {
+        'transaction_type': 'Authorize',
+        'status': 'Success' if response is not None and response.messages.resultCode == "Ok" else 'Failed'
+    }
+
+    return response_data
 
 if (os.path.basename(__file__) == os.path.basename(sys.argv[0])):
     print("Hello World!")

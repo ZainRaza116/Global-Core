@@ -326,7 +326,7 @@
 }
     </style>
 </head>
-<form id="paymentForm" method="POST" action="/admin/Global_Core/sales/{{ object_id }}/payment/">
+<form id="paymentForm" method="POST" action="/cms/Global_Core/sales/{{ object_id }}/payment/">
     {% csrf_token %}
     <div class="main">
         <div class="invoice">
@@ -538,7 +538,7 @@ document.getElementById('gateway-select').addEventListener('change', function() 
         // Get CSRF token from cookie
         var csrftoken = getCookie('csrftoken');
 
-fetch('https://contactcenter.quickresolvers.com/get_merchants/?gateway_id=' + gatewayId, {
+fetch('/get_merchants/?gateway_id=' + gatewayId, {
 
             method: 'GET',
             headers: {
