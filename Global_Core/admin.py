@@ -105,25 +105,39 @@ class CardInline(SemanticStackedInline):
     extra = 0
     # formset = CardInlineFormSet
     form = CardForm
-
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = list(super().get_readonly_fields(request, obj))
+        if obj and hasattr(obj, 'transaction_type') and obj.transaction_type in ['Sale', 'Authorize']:
+            # Add fields from the Card model to readonly_fields
+            readonly_fields += [field.name for field in self.model._meta.fields]
+        return tuple(readonly_fields)
 
 class BankAccountInline(SemanticStackedInline):
     model = BankAccount
     extra = 0
     # forms = AccountInlineFormSet
 
-
 class SalesAdmin(admin.ModelAdmin):
     change_form_template = 'admin/sales/change_form.html'
+    # fieldsets = (
+    #     (None, {
+    #         'fields': ('sales_date', 'provider_name'),
+    #     }),
+    #     ('Customer Information', {
+    #         'fields': ('customer_name', 'customer_first_name', 'customer_last_name', 'customer_address', 'state', 'zip_code', 'calling_no', 'customer_email', 'ssn', 'cus_dob'),
+    #     }),
+    #     ('Payment Details', {
+    #         'fields': ('transaction_type', 'payment_method', 'amount'),
+    #     }),
+    #     ('Additional Information', {
+    #         'fields': ('btn', 'acc_user_name', 'password', 'status', 'reason', 'description', 'authorization'),
+    #     }),
+    # )
+
     inlines = [CardInline, BankAccountInline]
     form = SalesForm
 
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-        if not request.user.is_superuser:
-            form.base_fields['added_by'].disabled = True
-            form.base_fields['added_by'].initial = request.user.id
-        return form
+
 
     # def get_inline_instances(self, request, obj=None):
     #     inline_instances = super().get_inline_instances(request, obj)
@@ -139,11 +153,6 @@ class SalesAdmin(admin.ModelAdmin):
                 models.Q(associate_users__user=user)  # Filter for sales where the user is part of associated users
             ).distinct()
     #     return super().get_queryset(request)
-    def has_add_permission(self, request):
-        if not request.user.is_superuser:
-            return False
-        return True
-
     def has_change_permission(self, request, obj=None):
         if not request.user.is_superuser:
             return False
@@ -158,7 +167,7 @@ class SalesAdmin(admin.ModelAdmin):
         if request.user.is_superuser:
             return ['customer_name', 'shortened_customer_address', 'formatted_amount', 'payment_method', 'modified_added_by', 'payment_status_func', 'order_status_func','custom_action12']
         else:
-            return ['customer_name', 'customer_address', 'formatted_amount', 'payment_method', 'modified_added_by', 'payment_status_func', 'order_status_func','custom_action12']
+            return ['customer_name', 'customer_address', 'formatted_amount', 'payment_method', 'modified_added_by', 'payment_status_func', 'order_status_func','custom_action24']
 
     def shortened_customer_address(self, obj):
         words = obj.customer_address.split()
@@ -183,16 +192,22 @@ class SalesAdmin(admin.ModelAdmin):
     modified_added_by.short_description = 'Added By'
 
     # def get_exclude(self, request, obj=None):
-    #     # Exclude the 'transaction_type' field from the form
     #     excludes = super().get_exclude(request, obj=obj) or ()
     #     return excludes + ('transaction_type',)
 
     def get_readonly_fields(self, request, obj=None):
         readonly_fields = list(super().get_readonly_fields(request, obj))
-        if obj and obj.transaction_type:
+        if obj and obj.transaction_type in ['Sale', 'Authorize']:
             readonly_fields += [field.name for field in Sales._meta.fields]
-
         return tuple(readonly_fields)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "cards":
+            kwargs["queryset"] = Card.objects.filter(sales_id=request.resolver_match.kwargs['object_id'])
+            # Set card field to read-only
+            kwargs['widget'] = admin.widgets.AdminTextInputWidget(attrs={'readonly': 'readonly'})
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
     def pay(self, obj):
         payment_image_url = '/static/credit-card.png'
         payment_html = format_html(
@@ -201,6 +216,29 @@ class SalesAdmin(admin.ModelAdmin):
             'margin-right: 5px;" /></a>',
             f"/cms/Global_Core/sales/{obj.id}/payment/", payment_image_url)
         return payment_html
+
+    def custom_action24(self, obj):
+        details_image_url = '/static/reply-message.png'
+        message = obj.messages.first()
+        if message and not message.is_read:
+            details_image_url = '/static/notification_12299644.png'
+            details_html = format_html(
+                '<a href="{}?mark_as_read={}"><img src="{}" alt="View Details" style="max-height:'
+                ' 20px; max-width: 20px; margin-right: 5px;" /></a>',
+                f"/cms/Global_Core/sales/{obj.id}/response/", message.id, details_image_url)
+        else:
+            details_html = format_html(
+                '<a href="{}"><img src="{}" alt="View Details" style="max-height:'
+                ' 20px; max-width: 20px; margin-right: 5px;" /></a>',
+                f"/cms/Global_Core/sales/{obj.id}/response/", details_image_url)
+
+        return format_html(
+            '<div style="display: flex;">'
+            '{}'
+            '</div>',
+             details_html)
+
+    custom_action24.short_description = 'Actions'
 
     def custom_action12(self, obj):
         payment_image_url = '/static/credit-card.png'
@@ -286,11 +324,15 @@ class SalesAdmin(admin.ModelAdmin):
                  name="get_more_data"),
             path("<int:object_id>/assign_user/", self.admin_site.admin_view(self.add_user),
                  name="add_user"),
+            path("<int:object_id>/chargeback/", self.admin_site.admin_view(self.charge_back),
+                 name="cahrge_back"),
 
         ]
         return my_urls + urls
 
-
+    def charge_back(self, request , object_id):
+        user_info = Sales.objects.get(pk=object_id)
+        return render(request, 'chargeback.html' , {'user_info': user_info} )
     def add_user(self, request, object_id):
         user_info = Sales.objects.get(pk=object_id)
         users = CustomUser.objects.all()
@@ -630,6 +672,14 @@ class SalesAdmin(admin.ModelAdmin):
                 if status == 'Success':
                     sales = Sales.objects.get(pk=object_id)
                     sales.transaction_type = transaction_type
+                    invoice = Invoice.objects.create(
+                        sale=sales,
+                        payment=payment_method,
+                        security=security,
+                        gateway=gateway,
+                        Merchant_Name=merchant,
+                        payment_check='Yes'
+                    )
                     sales.save()
                 return JsonResponse(json_response)
             elif payment_method == 'Authorize' and gateway.lower() == 'authorize.net':

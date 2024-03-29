@@ -17,4 +17,5 @@ urlpatterns = [
     path('api/sales/<int:sale_id>/add_user/<int:user_id>/', views.add_associate_user, name='add_associate_user'),
     path('api/sales/<int:sale_id>/delete_user/<int:user_id>/', views.delete_associate_user,
          name='delete_associate_user'),
+    path('search_invoice/', views.get_sales_by_card_number, name='search_invoice'),
 ]

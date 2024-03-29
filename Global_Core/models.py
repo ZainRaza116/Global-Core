@@ -315,11 +315,17 @@ def handle_message_post_save(sender, instance, created, **kwargs):
 
 
 class Invoice(models.Model):
+    PAYMENT_CHECK_CHOICES = [
+        ('yes', 'Yes'),
+        ('no', 'No'),
+    ]
     sale = models.ForeignKey(Sales, on_delete=models.CASCADE, related_name='Invoice')
     payment = models.CharField(max_length=255, verbose_name='Payment Method')
     security = models.CharField(max_length=255, verbose_name='Security')
     gateway = models.CharField(max_length=255, verbose_name='Gateway')
     Merchant_Name = models.CharField(max_length=255, verbose_name='Merchant')
+    payment_check = models.CharField(max_length=3, choices=PAYMENT_CHECK_CHOICES, verbose_name='Payment Check',
+                                     default='no')
 
 class Links(models.Model):
     merchant_link = models.ForeignKey(

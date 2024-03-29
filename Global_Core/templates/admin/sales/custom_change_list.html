@@ -1,0 +1,12 @@
+{% extends "admin/base.html" %}
+
+{% block object-tools %}
+    {{ block.super }}
+    <p>This is a test text to ensure template loading.</p>
+{% endblock %}
+{% block object-tools-items %}
+    {{ block.super }}
+    <li>
+        <a href="{% url 'admin:your_custom_action_url' %}" class="button">Your Custom Action</a>
+    </li>
+{% endblock %}

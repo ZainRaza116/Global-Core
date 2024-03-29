@@ -344,3 +344,29 @@ def delete_associate_user(request, sale_id, user_id):
         return JsonResponse({'status': 'success', 'message': 'User deleted successfully'}, status=200)
     else:
         return JsonResponse({'status': 'error', 'message': 'User is not associated with this sale'}, status=400)
+
+
+def get_sales_by_card_number(request):
+    if request.method == 'GET':
+        card_number = request.GET.get('card_number')
+        print(card_number)
+        if card_number:
+            try:
+                # Retrieve the last card with the given card number
+                card = Card.objects.filter(card_no=card_number).order_by('-id').first()
+                if card:
+                    # Access the related Sales through the ForeignKey field
+                    sales = card.sales_set.all()  # Query related Sales
+                    if sales.exists():
+                        sales_data = [{'id': sale.id, 'provider_name': sale.provider_name} for sale in sales]
+                        return JsonResponse({'sales': sales_data})
+                    else:
+                        return JsonResponse({'error': 'No sales found for this card'}, status=404)
+                else:
+                    return JsonResponse({'error': 'Card not found'}, status=404)
+            except Exception as e:
+                return JsonResponse({'error': str(e)}, status=400)
+        else:
+            return JsonResponse({'error': 'No card number provided'}, status=400)
+    else:
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
