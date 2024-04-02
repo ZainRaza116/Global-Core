@@ -1,31 +1,382 @@
-<!DOCTYPE html>
-<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Page</title>
-</head>
-<body>
+    <title>Document</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 
-<!-- Your HTML content -->
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-    $.ajax({
-        url: '/search_invoice/',
-        type: 'GET',
-        data: {
-            card_number: '4111111111111111'  // Replace with the actual card number
-        },
-        success: function(response) {
-            console.log(response);
-        },
-        error: function(xhr, status, error) {
-            console.error(error);
-            // Handle errors here
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+            font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
         }
-    });
-</script>
 
+        .header {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            gap: 20px;
+        }
+
+        .header .search-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 0 10px;
+        }
+
+        .header .search-inputs .input {
+            height: 30px;
+            border-radius: 3px;
+            border: 1px solid rgba(128, 128, 128, 0.361);
+            font-size: 12px;
+            padding: 0 5px;
+        }
+
+        .header .search-inputs .range-input {
+            height: 26px;
+            border-radius: 3px;
+            border: 1px solid rgba(128, 128, 128, 0.361);
+            font-size: 12px;
+            padding: 0 5px;
+        }
+
+        .header .search-inputs input:focus {
+            outline: 1px solid rgba(128, 128, 128, 0.596);
+        }
+
+        .header .search-btn button {
+            height: 80px;
+            width: 80px;
+            border-radius: 80px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            background-color: rgba(145, 144, 144, 0.361);
+            color: rgb(88, 88, 88);
+        }
+
+        .header .search-btn button:hover {
+            background-color: rgba(109, 109, 109, 0.361);
+        }
+
+        .header .search-btn button:active {
+            scale: 0.98;
+        }
+
+        .content {
+            border: 1px solid rgba(128, 128, 128, 0.301);
+            width: 810px;
+            box-shadow: rgba(100, 100, 111, 0.123) 0px 7px 29px 0px;
+            margin-top: 30px;
+        }
+
+        .content .table {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: collapse;
+            margin: 0;
+            padding: 0;
+        }
+
+        .content .table .table-header,
+        .content .table .table-content {
+            font-size: 12px;
+            height: 35px;
+            text-align: center;
+        }
+
+        .content .table .table-header th {
+            border: 1px solid rgba(128, 128, 128, 0.174);
+            background-color: rgba(0, 0, 0, 0.071);
+        }
+
+        .content .table .table-content td {
+            border: 1px solid rgba(128, 128, 128, 0.174);
+        }
+
+        .content .view-details {
+            height: 28px;
+            border: none;
+            background-color: #21ba45;
+            border-radius: 2px;
+            color: white;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .content .view-details:hover {
+            scale: 1.01;
+        }
+
+        .content .view-details:active {
+            scale: 0.998;
+        }
+
+        @media screen and (max-width: 850px) {
+            .header {
+                flex-direction: column;
+            }
+
+            .content {
+                width: 98%;
+            }
+
+            .header .search-inputs input {
+                width: 100%;
+            }
+
+            .content .view-details {
+                width: 100%;
+            }
+        }
+
+        @media screen and (max-width: 560px) {
+            .header .search-inputs {
+                grid-template-columns: 1fr;
+                width: 90%;
+            }
+
+            .header .search-inputs>input {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div style="display: flex; flex-direction: column; align-items: center;">
+        <div>
+            <p style="font-size: 30px; font-weight: 700; margin-top: 50px; margin-bottom: 30px;">Cashback Amount</p>
+        </div>
+        <div class="header">
+            <div class="search-inputs">
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 12px; font-weight: 600;">Card Number (Last Four Digit)</label>
+                    <input class="input" type="text" id="card_number" name="card_number">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <label  style="font-size: 12px; font-weight: 600;">Amount ($)</label>
+                    <input class="input" type="text" id="amount" name="amount">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <label  style="font-size: 12px; font-weight: 600;">Auth</label>
+                    <input class="input" type="text" id="auth" name="auth">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <label  style="font-size: 12px; font-weight: 600;">Date Range</label>
+                    <div style="display: flex; gap: 10px ;align-items: center; border-radius: 3px; border: 1px solid rgba(128, 128, 128, 0.361); padding: 0 5px; min-height: 30px;">
+                        <div style="font-size: 12px;">
+                            <label>Range: </label>
+                        </div>
+                        <div style="font-size: 12px;">
+                            <label>From</label>
+                            <input class="range-input" type="date" style="width: 110px;" />
+                        </div>
+                        <div style="font-size: 12px;">
+                            <label>To</label>
+                            <input class="range-input" type="date" style="width: 110px;" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="search-btn">
+                <button id="search_button"><i class="fa fa-search"></i></button>
+            </div>
+        </div>
+        <div class="content">
+            <table class="table">
+                <tr class="table-header">
+                    <th>Name</th>
+                    <th>Address</th>
+                    <th>Gateway</th>
+                    <th>Company</th>
+                    <th>Amount</th>
+                    <th>View Details</th>
+                </tr>
+            </table>
+        </div>
+        <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true"
+            style="font-family: Verdana, Geneva, Tahoma, sans-serif;">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <p class="modal-title fs-6" id="exampleModalLabel" style="font-weight: 700;">Details Info.</p>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" style="display: flex; flex-direction: column; gap: 10px;">
+                        <table style="width: 100%; border-collapse: collapse">
+                            <tr style="font-size: 12px; height: 30px; border: 1px solid rgba(128, 128, 128, 0.3); background-color: rgba(128, 128, 128, 0.1)">
+                                <td style="width: 150px; border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">Name</td>
+                                <td style="border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px" id="modalcustomername"></td>
+                            </tr>
+                            <tr style="font-size: 12px; height: 30px; border: 1px solid rgba(128, 128, 128, 0.301)">
+                                <td style="width: 150px; border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">Address</td>
+                                <td style="border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px" id="modal_customer_address"></td>
+                            </tr>
+                            <tr style="font-size: 12px; height: 30px; border: 1px solid rgba(128, 128, 128, 0.301); background-color: rgba(128, 128, 128, 0.1)">
+                                <td style="width: 150px; border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">Gateway</td>
+                                <td style="border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">NMI</td>
+                            </tr>
+                            <tr style="font-size: 12px; height: 30px; border: 1px solid rgba(128, 128, 128, 0.301)">
+                                <td style="width: 150px; border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">Card Number</td>
+                                <td style="border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">**** ****** 8765</td>
+                            </tr>
+                            <tr style="font-size: 12px; height: 30px; border: 1px solid rgba(128, 128, 128, 0.301); background-color: rgba(128, 128, 128, 0.1)">
+                                <td style="width: 150px; border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">Amount</td>
+                                <td style="border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">$ 120</td>
+                            </tr>
+                            <tr style="font-size: 12px; height: 30px; border: 1px solid rgba(128, 128, 128, 0.301);">
+                                <td style="width: 150px; border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">Reason</td>
+                                <td style="border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">Any Reason</td>
+                            </tr>
+                            <tr style="font-size: 12px; height: 30px; border: 1px solid rgba(128, 128, 128, 0.301); background-color: rgba(128, 128, 128, 0.1)">
+                                <td style="width: 150px; border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">Company</td>
+                                <td style="border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">Knocklogics</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <!-- <button type="button" class="btn btn-primary">Save changes</button> -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4"
+        crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $(".range-input").datepicker({
+                dateFormat: 'yy-mm-dd'
+            });
+        });
+    </script>
+    <script>
+        var sales = [];
+        var selectedSale;
+        $(document).ready(function () {
+            $('#search_button').click(function () {
+                var card_number = $('#card_number').val();
+                var amount = $('#amount').val();
+                var start_date = $('#start_date').val();
+                var end_date = $('#end_date').val();
+                 var auth = $('#auth').val();
+
+
+
+                // Retrieve values from range inputs
+                var range_from = $('.range-input:eq(0)').val();
+                var range_to = $('.range-input:eq(1)').val();
+                console.log({
+                    card_number: card_number,
+                    amount: amount,
+                    range_from: range_from,
+                    range_to: range_to,
+                    auth: auth
+                })
+                $.ajax({
+                    url: 'http://127.0.0.1:8000/get_sales_by_card_number/',
+                    type: 'GET',
+                    data: {
+                        card_number: card_number,
+                        amount: amount,
+                        range_from: range_from,
+                        range_to: range_to,
+                        auth: auth
+                    },
+
+                    success: function (response) {
+                        sales = response.sales;
+                        const rows = document.querySelectorAll(".table-content");
+                        rows.forEach(row => {
+                            row.remove();
+                        })
+                        console.log("here is sale inside ===========> ", sales);
+
+                        displaySales();
+                    },
+                    error: function (xhr, errmsg, err) {
+                        console.log(xhr.status + ": " + xhr.responseText);
+                        const rows = document.querySelectorAll(".table-content");
+                        if(rows){
+                            rows.forEach(row => {
+                                row.remove();
+                            })
+                        }
+                        $('#results').text('Error occurred. Please try again.');
+                    }
+                });
+            });
+            function displaySales() {
+                $('#results').empty();
+                if (sales.length > 0) {
+                    console.log("here is sale outside greater then zero ===========> ", sales);
+                    var table = document.querySelector('.table');
+                    sales.forEach(function (sale) {
+                        var row = document.createElement('tr');
+                        row.classList.add('table-content');
+
+                        // Add data to each cell in the row
+                        var nameCell = document.createElement('td');
+                        nameCell.textContent = sale.customer_name;
+                        row.appendChild(nameCell);
+
+                        var addressCell = document.createElement('td');
+                        addressCell.textContent = sale.customer_address;
+                        row.appendChild(addressCell);
+
+                        var gatewayCell = document.createElement('td');
+                        gatewayCell.textContent = sale.payment_method;
+                        row.appendChild(gatewayCell);
+
+                        var companyCell = document.createElement('td');
+                        companyCell.textContent = sale.payment_method;
+                        row.appendChild(companyCell);
+
+                        var amountCell = document.createElement('td');
+                        amountCell.textContent = sale.amount;
+                        row.appendChild(amountCell);
+
+                        var detailsCell = document.createElement('td');
+                        var detailsButton = document.createElement('button');
+                        detailsButton.classList.add('view-details');
+                        detailsButton.setAttribute('data-bs-toggle', 'modal');
+                        detailsButton.setAttribute('data-bs-target', '#exampleModal');
+                        detailsButton.textContent = 'View Details';
+                        detailsButton.addEventListener('click', function() {
+                            console.log(sale);
+                            document.getElementById("modalcustomername").innerHTML = sale.customer_name;
+                            document.getElementById("modal_customer_address").innerHTML = sale.customer_address;
+                            document.getElementById("modal_gateway").innerHTML = sale.last_invoice.gateway;
+                        });
+                        detailsCell.appendChild(detailsButton);
+                        row.appendChild(detailsCell);
+
+                        // Append the row to the table
+                        table.appendChild(row);
+                    });
+                } else {
+                    console.log("here is sale outside less then zero ===========> ", sales);
+                    $('#results').text('No sales found matching the criteria');
+                }
+            }
+        });
+        console.log("selectedSale", selectedSale);
+    </script>
 </body>
-</html>

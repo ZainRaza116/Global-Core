@@ -5,6 +5,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.utils.datetime_safe import datetime
 from django.views.decorators.http import require_POST
+from django.views.generic import DetailView
+from rest_framework.views import APIView
 
 from .authorizepayment import authorize_credit_card, charge_credit_card
 import lxml.etree as ET
@@ -19,6 +21,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from .models import Sales, CustomUser
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework.views import APIView
 
 def charge_credit_card_view(request):
     if request.method == 'POST':
@@ -288,26 +291,30 @@ def get_merchants(request):
 #     except Exception as e:
 #         return JsonResponse({'error': str(e)}, status=500)
 
-def invoice(request, invoice_id):
-    invoice_object = get_object_or_404(Invoice, pk=invoice_id)
-    gateway = invoice_object.gateway
-    sale_object = invoice_object.sale
-    selected_card = sale_object.cards.filter(card_to_be_used=True).first()
-    date = datetime.now().date()
-    sale_id = sale_object.id
-    payment = invoice_object.payment
+class InvoiceDetailView(DetailView):
+    model = Invoice
+    template_name = 'invoice.html'
+    context_object_name = 'invoice_object'
 
-    contex = {
-        "object_id": sale_id,
-        "gateway": gateway,
-        "invoice_id": invoice_id,
-        "invoice_object": invoice_object,
-        "date": date,
-        'sale': sale_object,
-        'cards': selected_card,
-        'payment_method': payment
-    }
-    return render(request, 'invoice.html', contex)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        invoice_object = self.get_object()
+        gateway = invoice_object.gateway
+        sale_object = invoice_object.sale
+        selected_card = sale_object.cards.filter(card_to_be_used=True).first()
+        date = datetime.now().date()
+        sale_id = sale_object.id
+        payment = invoice_object.payment
+
+        context["object_id"] = sale_id
+        context["gateway"] = gateway
+        context["invoice_id"] = self.kwargs.get('invoice_id')
+        context["date"] = date
+        context["sale"] = sale_object
+        context["cards"] = selected_card
+        context["payment_method"] = payment
+
+        return context
 
 
 @require_POST
@@ -346,27 +353,76 @@ def delete_associate_user(request, sale_id, user_id):
         return JsonResponse({'status': 'error', 'message': 'User is not associated with this sale'}, status=400)
 
 
-def get_sales_by_card_number(request):
-    if request.method == 'GET':
+class SalesByCardNumberAPIView(APIView):
+    def get(self, request):
         card_number = request.GET.get('card_number')
-        print(card_number)
-        if card_number:
-            try:
-                # Retrieve the last card with the given card number
-                card = Card.objects.filter(card_no=card_number).order_by('-id').first()
-                if card:
-                    # Access the related Sales through the ForeignKey field
-                    sales = card.sales_set.all()  # Query related Sales
-                    if sales.exists():
-                        sales_data = [{'id': sale.id, 'provider_name': sale.provider_name} for sale in sales]
-                        return JsonResponse({'sales': sales_data})
-                    else:
-                        return JsonResponse({'error': 'No sales found for this card'}, status=404)
-                else:
-                    return JsonResponse({'error': 'Card not found'}, status=404)
-            except Exception as e:
-                return JsonResponse({'error': str(e)}, status=400)
-        else:
-            return JsonResponse({'error': 'No card number provided'}, status=400)
-    else:
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
+        amount = request.GET.get('amount')
+        start_date = request.GET.get('range_from')
+        end_date = request.GET.get('range_to')
+        auth = request.GET.get('auth')
+        if not (card_number or amount or (start_date and end_date) or auth):
+            return Response({'error': 'Please provide card number, amount, Auth, or date range'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            sales = Sales.objects.all()
+
+            if card_number:
+                sales = sales.filter(cards__card_no__endswith=card_number, cards__card_to_be_used=True)
+            if auth:
+                sales = sales.filter(transaction_type=auth)
+            if amount:
+                # Search by amount
+                sales = sales.filter(amount=float(amount))
+
+            if start_date and end_date:
+                # Search by date range
+                start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
+                end_datetime = datetime.strptime(end_date, '%Y-%m-%d')
+                sales = sales.filter(sales_date__range=[start_datetime, end_datetime])
+            sales = sales.filter(transaction_type__in=['Sale', 'Authorize'])
+
+            if sales.exists():
+                sales_data = []
+                for sale in sales:
+                    bank_account = BankAccount.objects.filter(sales=sale, account_to_be_used=True).first()
+                    last_invoice = Invoice.objects.filter(sale_id=sale.id, payment_check='Yes').order_by('-id').first()
+                    print(last_invoice)
+                    sales_data.append({
+                        'id': sale.id,
+                        'provider_name': sale.provider_name,
+                        'sales_date': sale.sales_date,
+                        'customer_name': sale.customer_name,
+                        'customer_address': sale.customer_address,
+                        'customer_email': sale.customer_email,
+                        'amount': sale.amount,
+                        'payment_method': sale.payment_method,
+                        'status': sale.status,
+                        'reason': sale.reason,
+                        'description': sale.description,
+                        'authorization': sale.authorization.url if sale.authorization else None,
+                        'bank_account': {
+                            'account_name': bank_account.account_name,
+                            'checking_acc': bank_account.checking_acc,
+                            'routing_no': bank_account.routing_no,
+                            'checking_no': bank_account.checking_no,
+                            'account_address': bank_account.account_address
+                        } if bank_account else None,
+                        'last_invoice': {
+                            'invoice_id': last_invoice.id,
+                            'payment': last_invoice.payment,
+                            'security': last_invoice.security,
+                            'gateway': last_invoice.gateway,
+                            'Merchant_Name': last_invoice.Merchant_Name,
+                            'payment_check': last_invoice.payment_check
+                        } if last_invoice else None
+                    })
+                return Response({'sales': sales_data})
+            else:
+                return Response({'error': 'No sales found matching the criteria'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+def chargeback_view(request):
+    return render(request, 'chargeback.html')

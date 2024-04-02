@@ -227,6 +227,12 @@ class Card(models.Model):
         verbose_name = 'Card'
         verbose_name_plural = 'Cards'
 
+    def clean(self):
+        if self.card_to_be_used:
+            # Check if any other card for the same sale is already marked as "CARD IN USE"
+            if self.__class__.objects.filter(sales=self.sales, card_to_be_used=True).exclude(id=self.id).exists():
+                raise ValidationError('Only one card can be marked as "CARD IN USE" for the same sale.')
+
     # def clean(self):
     #     if self.sales.payment_method == "account":
     #         # If payment method is "account", skip card validation
@@ -310,7 +316,6 @@ def handle_message_post_save(sender, instance, created, **kwargs):
     if created:
         # Get the sale associated with the message
         sale = instance.sale
-        # Set is_read to False for all other messages associated with the same sale
         sale.messages.exclude(pk=instance.pk).update(is_read=False)
 
 

@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
-
+from .views import InvoiceDetailView
+from .views import SalesByCardNumberAPIView
 urlpatterns = [
     path('enter_payment_details/', views.charge_credit_card_view, name='enter_payment_details'),
     path('charge/', views.charge, name='charge'),
@@ -12,10 +13,11 @@ urlpatterns = [
     path('square_payment', views.square_payment , name='square_payment'),
     path("get_merchants/", views.get_merchants, name="get_merchants"),
     # path('admin/Global_Core/sales/<int:object_id>/details/', views.get_details_view, name='get_details'),
-    path('customer_invoice/<int:invoice_id>/', views.invoice, name='test'),
+    path('customer_invoice/<int:pk>/', InvoiceDetailView.as_view(), name='test'),
     path('mark_as_read/<int:message_id>/', views.mark_as_read, name='mark_as_read'),
     path('api/sales/<int:sale_id>/add_user/<int:user_id>/', views.add_associate_user, name='add_associate_user'),
     path('api/sales/<int:sale_id>/delete_user/<int:user_id>/', views.delete_associate_user,
          name='delete_associate_user'),
-    path('search_invoice/', views.get_sales_by_card_number, name='search_invoice'),
+    path('get_sales_by_card_number/', SalesByCardNumberAPIView.as_view(), name='get_sales_by_card_number'),
+    path('cms/Global_Core/chargeback/', views.chargeback_view, name='chargeback'),
 ]

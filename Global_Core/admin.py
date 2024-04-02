@@ -324,15 +324,14 @@ class SalesAdmin(admin.ModelAdmin):
                  name="get_more_data"),
             path("<int:object_id>/assign_user/", self.admin_site.admin_view(self.add_user),
                  name="add_user"),
-            path("<int:object_id>/chargeback/", self.admin_site.admin_view(self.charge_back),
-                 name="cahrge_back"),
-
+            path("chargeback/", self.admin_site.admin_view(self.charge_back),
+                 name="charge_back"),
         ]
         return my_urls + urls
 
-    def charge_back(self, request , object_id):
-        user_info = Sales.objects.get(pk=object_id)
-        return render(request, 'chargeback.html' , {'user_info': user_info} )
+    def charge_back(self, request ):
+        return render(request, 'chargeback.html')
+
     def add_user(self, request, object_id):
         user_info = Sales.objects.get(pk=object_id)
         users = CustomUser.objects.all()
@@ -362,10 +361,7 @@ class SalesAdmin(admin.ModelAdmin):
                 sales_date__year=current_year
             ).count()
 
-            # Get active users count
             active_users_count = CustomUser.objects.filter(is_active=True).count()
-
-            # Get total revenue for the current month
             total_revenue = Sales.objects.filter(
                 sales_date__month=current_month,
                 sales_date__year=current_year
@@ -592,6 +588,14 @@ class SalesAdmin(admin.ModelAdmin):
                     sales = Sales.objects.get(pk=object_id)
                     sales.transaction_type = "Sale"
                     sales.save()
+                    invoice = Invoice.objects.create(
+                        sale=sales,
+                        payment="Sale",
+                        security="2D",
+                        gateway="NMI",
+                        Merchant_Name="-",
+                        payment_check='Yes'
+                    )
                 return JsonResponse({'message': 'Data received successfully'})
             except json.JSONDecodeError:
                 return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
@@ -680,6 +684,8 @@ class SalesAdmin(admin.ModelAdmin):
                         Merchant_Name=merchant,
                         payment_check='Yes'
                     )
+
+                    print("Invoice has been created")
                     sales.save()
                 return JsonResponse(json_response)
             elif payment_method == 'Authorize' and gateway.lower() == 'authorize.net':
@@ -693,7 +699,14 @@ class SalesAdmin(admin.ModelAdmin):
                 if status == 'Success':
                     sales = Sales.objects.get(pk=object_id)
                     sales.transaction_type = transaction_type
-                    sales.save()
+                    invoice = Invoice.objects.create(
+                        sale=sales,
+                        payment=payment_method,
+                        security=security,
+                        gateway=gateway,
+                        Merchant_Name=merchant,
+                        payment_check='Yes'
+                    )
                 return HttpResponseRedirect(request.path)
 
                 return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
@@ -709,6 +722,14 @@ class SalesAdmin(admin.ModelAdmin):
                         sales = Sales.objects.get(pk=object_id)
                         sales.transaction_type = "Authorize"
                         sales.save()
+                        invoice = Invoice.objects.create(
+                            sale=sales,
+                            payment=payment_method,
+                            security=security,
+                            gateway=gateway,
+                            Merchant_Name=merchant,
+                            payment_check='Yes'
+                        )
                     return HttpResponseRedirect(request.path)
                 except Exception as e:
                     error_message = "An error occurred: {}".format(e)
@@ -725,6 +746,14 @@ class SalesAdmin(admin.ModelAdmin):
                         sales = Sales.objects.get(pk=object_id)
                         sales.transaction_type = "Sale"
                         sales.save()
+                        invoice = Invoice.objects.create(
+                            sale=sales,
+                            payment=payment_method,
+                            security=security,
+                            gateway=gateway,
+                            Merchant_Name=merchant,
+                            payment_check='Yes'
+                        )
                     return HttpResponseRedirect(request.path)
                 except Exception as e:
                     error_message = "An error occurred: {}".format(e)
@@ -766,6 +795,14 @@ class SalesAdmin(admin.ModelAdmin):
                         sales = Sales.objects.get(pk=object_id)
                         sales.transaction_type = "Authorize"
                         sales.save()
+                        invoice = Invoice.objects.create(
+                            sale=sales,
+                            payment=payment_method,
+                            security=security,
+                            gateway=gateway,
+                            Merchant_Name=merchant,
+                            payment_check='Yes'
+                        )
                     return HttpResponseRedirect(request.path)
 
                 except json.JSONDecodeError:
@@ -808,6 +845,14 @@ class SalesAdmin(admin.ModelAdmin):
                         sales = Sales.objects.get(pk=object_id)
                         sales.transaction_type = "Sale"
                         sales.save()
+                        invoice = Invoice.objects.create(
+                            sale=sales,
+                            payment=payment_method,
+                            security=security,
+                            gateway=gateway,
+                            Merchant_Name=merchant,
+                            payment_check='Yes'
+                        )
                     return HttpResponseRedirect(request.path)
                 except json.JSONDecodeError:
                     return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
@@ -927,6 +972,7 @@ class DashboardAdmin(admin.ModelAdmin):
 
 class InvoiceAdmin(admin.ModelAdmin):
         list_display = ['sale', 'payment', 'security', 'gateway','Merchant_Name']
+
 
 
 admin.site.register(Sales, SalesAdmin)

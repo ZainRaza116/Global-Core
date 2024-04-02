@@ -20,5 +20,7 @@ class CardForm(forms.ModelForm):
             'expiry_month': forms.TextInput(attrs={'placeholder': 'Enter Valid Expiry Month'}),
             'expiry_year': forms.TextInput(attrs={'placeholder': 'Enter Valid Expiry Year i-e 2030'}),
             'cvv': forms.TextInput(attrs={'placeholder': 'Enter Valid CVV'}),
+            'gift_card': forms.Select(choices=Card.GIFT_CARD_OPTION),
 
         }
+
