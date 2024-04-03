@@ -159,7 +159,7 @@
 <body>
     <div style="display: flex; flex-direction: column; align-items: center;">
         <div>
-            <p style="font-size: 30px; font-weight: 700; margin-top: 50px; margin-bottom: 30px;">Cashback Amount</p>
+            <p style="font-size: 30px; font-weight: 700; margin-top: 50px; margin-bottom: 30px;">Chargeback Amount</p>
         </div>
         <div class="header">
             <div class="search-inputs">
@@ -196,6 +196,7 @@
                 <button id="search_button"><i class="fa fa-search"></i></button>
             </div>
         </div>
+
         <div class="content">
             <table class="table">
                 <tr class="table-header">
@@ -208,6 +209,7 @@
                 </tr>
             </table>
         </div>
+
         <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true"
             style="font-family: Verdana, Geneva, Tahoma, sans-serif;">
             <div class="modal-dialog">
@@ -216,6 +218,9 @@
                         <p class="modal-title fs-6" id="exampleModalLabel" style="font-weight: 700;">Details Info.</p>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
+<!--                    <form id="paymentForm" method="POST" action="http://127.0.0.1:8000/Global_Core/chargeback/paymentmethod">-->
+<!--                    {% csrf_token %}-->
+                        <input type="hidden" name="sale_id" id="sale_id" value="{{ sale_id }}">
                     <div class="modal-body" style="display: flex; flex-direction: column; gap: 10px;">
                         <table style="width: 100%; border-collapse: collapse">
                             <tr style="font-size: 12px; height: 30px; border: 1px solid rgba(128, 128, 128, 0.3); background-color: rgba(128, 128, 128, 0.1)">
@@ -227,34 +232,55 @@
                                 <td style="border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px" id="modal_customer_address"></td>
                             </tr>
                             <tr style="font-size: 12px; height: 30px; border: 1px solid rgba(128, 128, 128, 0.301); background-color: rgba(128, 128, 128, 0.1)">
-                                <td style="width: 150px; border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">Gateway</td>
-                                <td style="border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">NMI</td>
+                                <td style="width: 150px; border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px" >Gateway</td>
+                                <td style="border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px" id="modal_gateway"></td>
                             </tr>
                             <tr style="font-size: 12px; height: 30px; border: 1px solid rgba(128, 128, 128, 0.301)">
-                                <td style="width: 150px; border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">Card Number</td>
-                                <td style="border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">**** ****** 8765</td>
+                                <td style="width: 150px; border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px" >Card Number</td>
+                                <td style="border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px" id="modal_card"></td>
                             </tr>
                             <tr style="font-size: 12px; height: 30px; border: 1px solid rgba(128, 128, 128, 0.301); background-color: rgba(128, 128, 128, 0.1)">
-                                <td style="width: 150px; border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">Amount</td>
-                                <td style="border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">$ 120</td>
+                                <td style="width: 150px; border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px" >Amount</td>
+                                <td style="border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px"id="modal_amount">$ </td>
                             </tr>
                             <tr style="font-size: 12px; height: 30px; border: 1px solid rgba(128, 128, 128, 0.301);">
                                 <td style="width: 150px; border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">Reason</td>
-                                <td style="border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">Any Reason</td>
+                                <td style="border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px" id="modal_reason"></td>
                             </tr>
                             <tr style="font-size: 12px; height: 30px; border: 1px solid rgba(128, 128, 128, 0.301); background-color: rgba(128, 128, 128, 0.1)">
                                 <td style="width: 150px; border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">Company</td>
-                                <td style="border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px">Knocklogics</td>
+                                <td style="border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px" id="modal_company"></td>
                             </tr>
                         </table>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <!-- <button type="button" class="btn btn-primary">Save changes</button> -->
+                        {% if sale.transaction_type != "Charge Back" %}
+                            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#popupModal" id="btn-chargeback">Charge Back</button>
+                           <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#popupModal" id="btn-chargeback12">Charge Back Already Done</button>
+                        {% endif %}
+                    </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="popupModal" tabindex="-1" aria-labelledby="popupModalLabel" aria-hidden="true"
+            style="font-family: Verdana, Geneva, Tahoma, sans-serif;">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <p class="modal-title fs-6 d-flex align-items-center" id="popupModalLabel" style="font-weight: 700;">
+                            <i class="fa fa-warning text-warning" style="font-size: 25px"></i>&nbsp;&nbsp;Are You sure to chargeback ?
+                        </p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                        <button type="button" class="btn btn-success" data-bs-dismiss="modal" onclick="fn_chargeback()">Yes</button>
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4"
@@ -269,15 +295,14 @@
     </script>
     <script>
         var sales = [];
-        var selectedSale;
+        var selectedSaleId = 1;
         $(document).ready(function () {
             $('#search_button').click(function () {
                 var card_number = $('#card_number').val();
                 var amount = $('#amount').val();
                 var start_date = $('#start_date').val();
                 var end_date = $('#end_date').val();
-                 var auth = $('#auth').val();
-
+                var auth = $('#auth').val();
 
 
                 // Retrieve values from range inputs
@@ -307,14 +332,14 @@
                         rows.forEach(row => {
                             row.remove();
                         })
-                        console.log("here is sale inside ===========> ", sales);
+
 
                         displaySales();
                     },
                     error: function (xhr, errmsg, err) {
                         console.log(xhr.status + ": " + xhr.responseText);
                         const rows = document.querySelectorAll(".table-content");
-                        if(rows){
+                        if (rows) {
                             rows.forEach(row => {
                                 row.remove();
                             })
@@ -323,6 +348,7 @@
                     }
                 });
             });
+
             function displaySales() {
                 $('#results').empty();
                 if (sales.length > 0) {
@@ -342,11 +368,11 @@
                         row.appendChild(addressCell);
 
                         var gatewayCell = document.createElement('td');
-                        gatewayCell.textContent = sale.payment_method;
+                        gatewayCell.textContent = sale.last_invoice.gateway;
                         row.appendChild(gatewayCell);
 
                         var companyCell = document.createElement('td');
-                        companyCell.textContent = sale.payment_method;
+                        companyCell.textContent = sale.last_invoice.Merchant_Name;
                         row.appendChild(companyCell);
 
                         var amountCell = document.createElement('td');
@@ -359,11 +385,30 @@
                         detailsButton.setAttribute('data-bs-toggle', 'modal');
                         detailsButton.setAttribute('data-bs-target', '#exampleModal');
                         detailsButton.textContent = 'View Details';
-                        detailsButton.addEventListener('click', function() {
+                        detailsButton.addEventListener('click', function () {
                             console.log(sale);
+
+                            selectedSaleId = sale.id;
+                            TransactionSale1 = sale.transaction_type
+
                             document.getElementById("modalcustomername").innerHTML = sale.customer_name;
                             document.getElementById("modal_customer_address").innerHTML = sale.customer_address;
+                             console.log(sale.card_number.card_number)
+                            document.getElementById("modal_card").innerHTML = sale.card_number.card_number;
+                            document.getElementById("modal_reason").innerHTML = sale.reason;
+                            document.getElementById("modal_company").innerHTML = sale.last_invoice.Merchant_Name;
                             document.getElementById("modal_gateway").innerHTML = sale.last_invoice.gateway;
+                            document.getElementById("modal_amount").innerHTML = sale.amount;
+                            console.log(TransactionSale1)
+                        if (TransactionSale1 !== "Charge Back") {
+                            $('#popupModal').find('.btn-success').show();
+                            $('#popupModal').find('.btn btn-danger').hide();
+                        } else {
+                        $('#popupModal').find('.btn .btn-success').hide();
+                          $('#popupModal').find('.btn btn-danger').show();
+                        console.log("hide")
+                    }
+
                         });
                         detailsCell.appendChild(detailsButton);
                         row.appendChild(detailsCell);
@@ -376,7 +421,55 @@
                     $('#results').text('No sales found matching the criteria');
                 }
             }
+
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+var csrftoken = getCookie('csrftoken');
+
+$(document).on('click', '.btn-success', function () {
+    // Retrieve the sale_id from the selected row
+    var saleId = selectedSaleId;
+    var Type = TransactionSale1
+    if (saleId) {
+        console.log("********",Type)
+        // Retrieve the CSRF token
+        var csrftoken = getCookie('csrftoken');
+
+        // Make the AJAX request with the dynamic sale_id
+        $.ajax({
+            url: 'http://127.0.0.1:8000/Global_Core/chargeback/paymentmethod',
+            type: 'POST',
+            data: {
+                sale_id: saleId, // Use the dynamic sale_id here
+                csrfmiddlewaretoken: csrftoken
+            },
+            success: function (response) {
+                console.log('AJAX request successful');
+                console.log(response);
+            },
+            error: function (xhr, errmsg, err) {
+                console.log('Error occurred:', err, errmsg);
+            }
         });
-        console.log("selectedSale", selectedSale);
+    }
+});
+
+// Define the fn_chargeback function
+const fn_chargeback = () => {
+    window.location.reload();
+};})
     </script>
 </body>

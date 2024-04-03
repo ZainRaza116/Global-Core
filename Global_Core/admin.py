@@ -105,6 +105,7 @@ class CardInline(SemanticStackedInline):
     extra = 0
     # formset = CardInlineFormSet
     form = CardForm
+
     def get_readonly_fields(self, request, obj=None):
         readonly_fields = list(super().get_readonly_fields(request, obj))
         if obj and hasattr(obj, 'transaction_type') and obj.transaction_type in ['Sale', 'Authorize']:
@@ -197,7 +198,7 @@ class SalesAdmin(admin.ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         readonly_fields = list(super().get_readonly_fields(request, obj))
-        if obj and obj.transaction_type in ['Sale', 'Authorize']:
+        if obj and obj.transaction_type in ['Sale', 'Authorize', 'Charge Back']:
             readonly_fields += [field.name for field in Sales._meta.fields]
         return tuple(readonly_fields)
 
@@ -286,6 +287,8 @@ class SalesAdmin(admin.ModelAdmin):
             payment_html = '<span style="color: Black; font-weight: bold;">Sale</span>'
         elif obj.transaction_type == 'Authorize':
             payment_html = '<span style="color: green; font-weight: bold;">Authorize</span>'
+        elif obj.transaction_type == 'Charge Back':
+            payment_html = '<span style="color: Blue; font-weight: bold;">Charge Back</span>'
         else:
             payment_html = '<span style="color: Red; font-weight: bold;">Not Processed</span>'
         return format_html(payment_html)
