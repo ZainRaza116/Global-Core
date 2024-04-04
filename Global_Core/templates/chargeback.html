@@ -254,10 +254,11 @@
                         </table>
                     </div>
                     <div class="modal-footer">
-                        {% if sale.transaction_type != "Charge Back" %}
-                            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#popupModal" id="btn-chargeback">Charge Back</button>
-                           <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#popupModal" id="btn-chargeback12">Charge Back Already Done</button>
-                        {% endif %}
+                        <button type="button" data-bs-toggle="modal" data-bs-target="#popupModal" id="btn-secondModal"></button>
+<!--                        {% if sale.transaction_type != "Charge Back" %}-->
+<!--                            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#popupModal" id="btn-chargeback">Charge Back</button>-->
+<!--                           <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#popupModal" id="btn-chargedone">Charge Back Already Done</button>-->
+<!--                        {% endif %}-->
                     </div>
                     </form>
                 </div>
@@ -399,16 +400,23 @@
                             document.getElementById("modal_company").innerHTML = sale.last_invoice.Merchant_Name;
                             document.getElementById("modal_gateway").innerHTML = sale.last_invoice.gateway;
                             document.getElementById("modal_amount").innerHTML = sale.amount;
-                            console.log(TransactionSale1)
                         if (TransactionSale1 !== "Charge Back") {
-                            $('#popupModal').find('.btn-success').show();
-                            $('#popupModal').find('.btn btn-danger').hide();
-                        } else {
-                        $('#popupModal').find('.btn .btn-success').hide();
-                          $('#popupModal').find('.btn btn-danger').show();
-                        console.log("hide")
-                    }
-
+                                console.log("TransactionSale1 ===> sale === > ", TransactionSale1)
+                                document.getElementById("btn-secondModal").innerHTML = "Charge Back";
+                                var ChargeBackBtn = document.getElementById("btn-secondModal");
+                                ChargeBackBtn.className = "";
+                                document.getElementById("btn-secondModal").classList.add("btn", "btn-outline-success");
+                                // $('#popupModal').find('.btn-success').show();
+                                // $('#popupModal').find('.btn btn-danger').hide();
+                            } else {
+                                console.log("TransactionSale1 ===> Charge Back === > ", TransactionSale1)
+                                document.getElementById("btn-secondModal").innerHTML = "Charge Back Already Done";
+                                var ChargeBackDoneBtn = document.getElementById("btn-secondModal");
+                                ChargeBackDoneBtn.className = "";
+                                document.getElementById("btn-secondModal").classList.add("btn", "btn-danger");
+                                // $('#popupModal').find('.btn .btn-success').hide();
+                                // $('#popupModal').find('.btn btn-danger').show();
+                            }
                         });
                         detailsCell.appendChild(detailsButton);
                         row.appendChild(detailsCell);

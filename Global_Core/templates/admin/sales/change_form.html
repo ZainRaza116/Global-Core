@@ -38,26 +38,28 @@
         function toggleFields() {
             var paymentMethod = document.getElementById('id_payment_method').value;
             if (paymentMethod === "card") {
-                var h2Elements = document.getElementsByTagName('h2');
-                for (var i = 0; i < h2Elements.length; i++) {
-                    h2Elements[1].style.display = 'none';
-                    h2Elements[0].style.display = 'block';
+                var cardh2Elements = document.getElementsByTagName('h2');
+                for (let i = 0; i < cardh2Elements.length; i++) {
+                    cardh2Elements[1].style.display = 'none';
+                    cardh2Elements[0].style.display = 'block';
                 }
-                var addRowsElements = document.getElementsByClassName('add-row');
-                for (var i = 0; i < addRowsElements.length; i++) {
-                    addRowsElements[1].style.display = 'none';
-                    addRowsElements[0].style.display = 'block';
+                var cardaddRowsElements = document.getElementsByClassName('eight');
+                console.log(cardaddRowsElements, "card target");
+                for (let i = 0; i < cardaddRowsElements.length; i++) {
+                    cardaddRowsElements[1].style.display = 'none';
+                    cardaddRowsElements[0].style.display = 'block';
                 }
             } else {
-                var h2Elements = document.getElementsByTagName('h2');
-                var addRowsElements = document.getElementsByClassName('add-row');
-                for (var i = 0; i < h2Elements.length; i++) {
-                    h2Elements[0].style.display = 'none';
-                    h2Elements[1].style.display = 'block';
+                var accounth2Elements = document.getElementsByTagName('h2');
+                for (let i = 0; i < accounth2Elements.length; i++) {
+                    accounth2Elements[0].style.display = 'none';
+                    accounth2Elements[1].style.display = 'block';
                 }
-                for (var i = 0; i < addRowsElements.length; i++) {
-                    addRowsElements[0].style.display = 'none';
-                    addRowsElements[1].style.display = 'block';
+                var accountaddRowsElements = document.getElementsByClassName('eight');
+                console.log(accountaddRowsElements, "accout target");
+                for (let i = 0; i < accountaddRowsElements.length; i++) {
+                    accountaddRowsElements[0].style.display = 'none';
+                    accountaddRowsElements[1].style.display = 'block';
                 }
             }
             // Toggle fields for cards

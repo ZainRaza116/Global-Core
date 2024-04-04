@@ -329,8 +329,13 @@ class SalesAdmin(admin.ModelAdmin):
                  name="add_user"),
             path("chargeback/", self.admin_site.admin_view(self.charge_back),
                  name="charge_back"),
+            path("wallet/", self.admin_site.admin_view(self.wallet),
+                 name="wallet"),
         ]
         return my_urls + urls
+
+    def wallet (self, request):
+        return render(request, 'wallet.html')
 
     def charge_back(self, request ):
         return render(request, 'chargeback.html')

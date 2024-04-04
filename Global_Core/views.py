@@ -1,9 +1,12 @@
 
 import requests
 import json
+
+from django.db.models import Count, Sum
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.utils.datetime_safe import datetime
+from django.utils.functional import SimpleLazyObject
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView
 from rest_framework.views import APIView
@@ -21,7 +24,7 @@ from rest_framework.decorators import api_view
 from .models import Sales, CustomUser
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
-
+from django.db.models.functions import TruncDate
 #          ************ APIs *********************
 def get_merchants(request):
     gateway_id = request.GET.get('gateway_id')
@@ -186,3 +189,40 @@ class ChangeTransactionTypeAPIView(APIView):
 
 def chargeback_view(request):
     return render(request, 'chargeback.html')
+
+
+class WalletAPIView(APIView):
+    def get(self, request):
+        try:
+            user = request.user
+            target = float(user.target)
+            wallet = user.wallet
+            current_wallet_value = float(wallet.value)
+            print(current_wallet_value)
+            distinct_dates = Sales.objects.filter(added_by=user).values('sales_date').distinct()
+            total_sales = current_wallet_value
+            sales_by_day = []
+
+            for date in distinct_dates:
+                total_amount = Sales.objects.filter(added_by=user, sales_date=date['sales_date']) \
+                    .filter(wallet_check=False) \
+                    .aggregate(total_amount=Sum('amount'))['total_amount']
+
+                if total_amount:
+                    sales_by_day.append({
+                        'date': date['sales_date'],
+                        'total_amount': total_amount
+                    })
+                    if total_amount >= target:
+                        wallet.value = str(current_wallet_value + target)
+                        wallet.save()
+                        total_sales = current_wallet_value + target
+                        Sales.objects.filter(added_by=user, sales_date=date['sales_date'], wallet_check=False) \
+                            .update(wallet_check=True)
+            return Response({
+                'sales_by_day': sales_by_day,
+                'total_sales': total_sales,
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallet</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+            font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+        }
+
+        body {
+            background-color: rgba(0, 0, 0, 0.087);
+        }
+
+        .wallet {
+            margin: 30px 100px;
+        }
+
+        .wallet .heading {
+            text-align: center;
+            font-size: 40px;
+            font-weight: 700;
+            margin-top: 50px;
+        }
+
+        .wallet .content {
+            border-radius: 10px;
+            margin-top: 70px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .wallet .content>div {
+            border-radius: 10px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: start;
+            padding: 30px 22px;
+            gap: 10px;
+            height: 160px;
+            color: white;
+            box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+            position: relative;
+        }
+
+        .wallet .content>div .icon {
+            position: absolute;
+            right: 22px;
+            font-size: 80px;
+            top: 39px;
+            color: rgba(255, 255, 255, 0.183);
+        }
+
+        .wallet .button-box {
+            margin-top: 70px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .wallet .button-box>button {
+            width: 150px;
+            height: 35px;
+            border: none;
+            background-color: #475d9a;
+            border-radius: 7px;
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .wallet .button-box>button:hover {
+            scale: 1.01;
+        }
+
+        .wallet .button-box>button:active {
+            scale: 0.995;
+        }
+
+        .modal-footer .yes-button{
+            width: 50px;
+            height: 35px;
+            border: none;
+            background-color: #475d9a;
+            border-radius: 7px;
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .modal-footer .no-button{
+            width: 50px;
+            height: 35px;
+            border: none;
+            background-color: #5a5a5c;
+            border-radius: 7px;
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wallet">
+        <p class="heading">My Wallet</p>
+        <div class="content">
+            <div style="background-image: linear-gradient(to right, #251d41, #475d9a);">
+                <p style="font-size: 25px; font-weight: 700;">Daily Commision Threshold</p>
+                <p style="font-size: 18px; font-weight: 600;">$ 35000</p>
+                <i class="icon fa-solid fa-money-check-dollar"></i>
+            </div>
+            <div style="background-image: linear-gradient(to right, #1d2a41, #475d9a);">
+                <p style="font-size: 25px; font-weight: 700;">Daily Commision</p>
+                <p style="font-size: 18px; font-weight: 600;">PKR 9668113</p>
+                <i class="icon fa-solid fa-rupee-sign"></i>
+            </div>
+        </div>
+        <div class="button-box">
+            <button data-bs-toggle="modal" data-bs-target="#exampleModal">Withdraw</button>
+        </div>
+    </div>
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5 fw-bold d-flex align-items-center gap-2" id="exampleModalLabel"><i class="fa-solid fa-circle-exclamation text-warning"></i>Do You Want to Withdraw ?</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="no-button" data-bs-dismiss="modal">No</button>
+                    <button type="button" class="yes-button">Yes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4"
+        crossorigin="anonymous"></script>
+</body>
+
+</html>

@@ -149,7 +149,8 @@ class Sales(models.Model):
     password = models.CharField(max_length=255, verbose_name='Password', null=True, blank=True)
     amount = models.FloatField(verbose_name='Amount', null=True, blank=True)
     payment_method = models.CharField(max_length=50, choices=PAYMENT_METHOD_CHOICES, verbose_name='Payment Method', default='card')
-    # account_fields
+
+    wallet_check = models.BooleanField(default=False, verbose_name='Wallet Check')
 
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, verbose_name='Status', default="pending")
     reason = models.CharField(max_length=255, verbose_name='Reason', null=True, blank=True)
@@ -311,12 +312,20 @@ class Messages(models.Model):
         return f"Card - {self.message}"
 
 
-@receiver(post_save, sender=Messages)
-def handle_message_post_save(sender, instance, created, **kwargs):
+@receiver(post_save, sender=CustomUser)
+def create_or_update_wallet(sender, instance, created, **kwargs):
+    if created or not hasattr(instance, 'wallet'):
+        print("Creating wallet")
+        Wallet.objects.create(user=instance)
+    else:
+        print("No Wallet")
+        pass
+
+@receiver(post_save, sender=CustomUser)
+def create_user_wallet(sender, instance, created, **kwargs):
     if created:
-        # Get the sale associated with the message
-        sale = instance.sale
-        sale.messages.exclude(pk=instance.pk).update(is_read=False)
+        print("Creating wallet")
+        Wallet.objects.create(user=instance)
 
 
 class Invoice(models.Model):
@@ -353,3 +362,11 @@ class Links(models.Model):
 class SalesUserAssociation(models.Model):
     sale = models.ForeignKey(Sales, on_delete=models.CASCADE, related_name ="associate_users")
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+
+
+class Wallet(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='wallet')
+    value = models.FloatField(default=0.0)
+
+    def __str__(self):
+        return f"Wallet for {self.user.username}"
