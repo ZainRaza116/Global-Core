@@ -135,7 +135,7 @@
         <div class="content">
             <div id="daily_threshold" style="background-image: linear-gradient(to right, #251d41, #475d9a);">
                 <p style="font-size: 25px; font-weight: 700;">Daily Commision Threshold</p>
-                <p id="threshold_amount" style="font-size: 18px; font-weight: 600;"></p>
+                <p id="threshold_amount" style="font-size: 18px; font-weight: 600;">$ <span id="priceDollerValue"></span> for <span id="priceRupeesValue"></span> Rs</p>
                 <i class="icon fa-solid fa-money-check-dollar"></i>
             </div>
             <div id="daily_commission" style="background-image: linear-gradient(to right, #1d2a41, #475d9a);">
@@ -155,9 +155,13 @@
                     <h1 class="modal-title fs-5 fw-bold d-flex align-items-center gap-2" id="exampleModalLabel"><i class="fa-solid fa-circle-exclamation text-warning"></i>Do You Want to Withdraw ?</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
+                <div class="modal-body d-flex flex-column gap-2">
+                    <label>How much you want to withdraw ?</label>
+                    <input type="number" class="form-control" />
+                </div>
                 <div class="modal-footer">
                     <button type="button" class="no-button" data-bs-dismiss="modal">No</button>
-                    <button type="button" class="yes-button">Yes</button>
+                    <button type="button" class="yes-button">Sure</button>
                 </div>
             </div>
         </div>
@@ -167,15 +171,21 @@
         crossorigin="anonymous"></script>
 </body>
  <script>
+      var priceDoller;
+    var priceRupees;
+
         fetch('http://127.0.0.1:8000/Global_Core/chargeback/wallet')
             .then(response => response.json())
             .then(data => {
-                console.log(data.target)
-                console.log(data.commision)
+                priceDoller = data.target;
+                priceRupees = data.commision;
+                document.getElementById('priceDollerValue').innerHTML = priceDoller;
+    document.getElementById('priceRupeesValue').innerHTML = priceRupees;
                 // document.getElementById('daily_threshold').textContent =
                 document.getElementById('commission_amount').textContent = 'PKR ' + data.Total_Commision;
             })
             .catch(error => console.error('Error fetching data:', error));
+
     </script>
 
 </html>
