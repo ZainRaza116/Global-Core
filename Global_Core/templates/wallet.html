@@ -108,6 +108,24 @@
             font-weight: 500;
             cursor: pointer;
         }
+        @media screen and (max-width: 950px) {
+            .wallet .content {
+                flex-direction: column;
+            }
+        }
+        @media screen and (max-width: 600px) {
+            .wallet {
+                margin: 30px 30px;
+            }
+            .wallet .content>div {
+                padding: 30px 22px;
+                gap: 10px;
+                height: 160px;
+                color: white;
+                box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+                position: relative;
+            }
+        }
     </style>
 </head>
 
@@ -115,14 +133,14 @@
     <div class="wallet">
         <p class="heading">My Wallet</p>
         <div class="content">
-            <div style="background-image: linear-gradient(to right, #251d41, #475d9a);">
+            <div id="daily_threshold" style="background-image: linear-gradient(to right, #251d41, #475d9a);">
                 <p style="font-size: 25px; font-weight: 700;">Daily Commision Threshold</p>
-                <p style="font-size: 18px; font-weight: 600;">$ 35000</p>
+                <p id="threshold_amount" style="font-size: 18px; font-weight: 600;"></p>
                 <i class="icon fa-solid fa-money-check-dollar"></i>
             </div>
-            <div style="background-image: linear-gradient(to right, #1d2a41, #475d9a);">
+            <div id="daily_commission" style="background-image: linear-gradient(to right, #1d2a41, #475d9a);">
                 <p style="font-size: 25px; font-weight: 700;">Daily Commision</p>
-                <p style="font-size: 18px; font-weight: 600;">PKR 9668113</p>
+                <p id="commission_amount" style="font-size: 18px; font-weight: 600;"></p>
                 <i class="icon fa-solid fa-rupee-sign"></i>
             </div>
         </div>
@@ -148,5 +166,16 @@
         integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4"
         crossorigin="anonymous"></script>
 </body>
+ <script>
+        fetch('http://127.0.0.1:8000/Global_Core/chargeback/wallet')
+            .then(response => response.json())
+            .then(data => {
+                console.log(data.target)
+                console.log(data.commision)
+                // document.getElementById('daily_threshold').textContent =
+                document.getElementById('commission_amount').textContent = 'PKR ' + data.Total_Commision;
+            })
+            .catch(error => console.error('Error fetching data:', error));
+    </script>
 
 </html>

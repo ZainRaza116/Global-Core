@@ -2,7 +2,7 @@
 import requests
 import json
 
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, F
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.utils.datetime_safe import datetime
@@ -179,9 +179,30 @@ class ChangeTransactionTypeAPIView(APIView):
         try:
             sale_id = request.data.get('sale_id')
             sale = Sales.objects.get(id=sale_id)
-            sale.transaction_type = 'Charge Back'
+            sale_amount = sale.amount
+            commission_adjustment = 0
+            user = sale.added_by
+            target = float(user.target)
+            commission = float(user.commission)
+            print(sale_amount)
+
+            # Get sales on the same day as the changed sale
+            sales_on_same_day = Sales.objects.filter(added_by=user, sales_date=sale.sales_date)
+            total_sales_on_same_day = sales_on_same_day.aggregate(total_sales=Sum('amount'))['total_sales']
+            print(total_sales_on_same_day)
+            total_sale = total_sales_on_same_day - sale_amount
+            slabs_hit_after_change = total_sale // target
+            commission_adjustment = (slabs_hit_after_change * commission) - 25
+            wallet = user.wallet
+            print(f"Wallet Before: {wallet.value}")
+            wallet.value = wallet.value - commission_adjustment
+            wallet.save()
+            print(f"Wallet After: {wallet.value}")
+            # sale.transaction_type = 'Charge Back'
             sale.save()
-            return Response({'message': 'Transaction type changed to Charge Back successfully'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Transaction type changed to Charge Back successfully',
+                             'commission_adjustment': commission_adjustment},
+                            status=status.HTTP_200_OK)
         except Sales.DoesNotExist:
             return Response({'error': 'Sale not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
@@ -190,12 +211,12 @@ class ChangeTransactionTypeAPIView(APIView):
 def chargeback_view(request):
     return render(request, 'chargeback.html')
 
-
 class WalletAPIView(APIView):
     def get(self, request):
         try:
             user = request.user
             target = float(user.target)
+            commision = float(user.commission)
             wallet = user.wallet
             current_wallet_value = float(wallet.value)
             print(current_wallet_value)
@@ -213,15 +234,23 @@ class WalletAPIView(APIView):
                         'date': date['sales_date'],
                         'total_amount': total_amount
                     })
+                    bonus_commission = 0
                     if total_amount >= target:
-                        wallet.value = str(current_wallet_value + target)
+                        slab_hits = total_amount // target
+                        bonus_commission = slab_hits * commision
+
+                        # Update wallet and mark sales as checked
+                        wallet.value = str(current_wallet_value + bonus_commission)
                         wallet.save()
-                        total_sales = current_wallet_value + target
+                        total_sales = current_wallet_value + bonus_commission
                         Sales.objects.filter(added_by=user, sales_date=date['sales_date'], wallet_check=False) \
                             .update(wallet_check=True)
+
             return Response({
                 'sales_by_day': sales_by_day,
-                'total_sales': total_sales,
+                'Total_Commision': total_sales,
+                'target': target,
+                'commision': commision
             }, status=status.HTTP_200_OK)
 
         except Exception as e:

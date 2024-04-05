@@ -18,6 +18,7 @@ class CustomUser(AbstractUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     salary = models.CharField(max_length=255, blank=False, null=False, verbose_name='Salary')
     target = models.CharField(max_length=255, blank=False, null=False, verbose_name='Target')
+    commission = models.CharField(max_length=255, blank=False, null=False, verbose_name='Commision')
     hiring_date = models.DateField(blank=False, default=timezone.now, null=False, verbose_name='Hiring Date')
     is_floormanager = models.BooleanField(default=False, verbose_name='Floor Manager')
     USERNAME_FIELD = 'email'

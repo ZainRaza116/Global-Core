@@ -54,7 +54,7 @@ class CustomUserAdmin(UserAdmin):
 
     fieldsets = (
         (None, {'fields': ('Name','email', 'password')}),
-        ('Personal info', {'fields': ('salary', 'target', 'hiring_date')}),
+        ('Personal info', {'fields': ('salary', 'target', 'hiring_date', 'commission')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups')}),
         ('Important dates', {'fields': ('last_login',)}),
     )
@@ -196,11 +196,11 @@ class SalesAdmin(admin.ModelAdmin):
     #     excludes = super().get_exclude(request, obj=obj) or ()
     #     return excludes + ('transaction_type',)
 
-    def get_readonly_fields(self, request, obj=None):
-        readonly_fields = list(super().get_readonly_fields(request, obj))
-        if obj and obj.transaction_type in ['Sale', 'Authorize', 'Charge Back']:
-            readonly_fields += [field.name for field in Sales._meta.fields]
-        return tuple(readonly_fields)
+    # def get_readonly_fields(self, request, obj=None):
+    #     readonly_fields = list(super().get_readonly_fields(request, obj))
+    #     if obj and obj.transaction_type in ['Sale', 'Authorize', 'Charge Back']:
+    #         readonly_fields += [field.name for field in Sales._meta.fields]
+    #     return tuple(readonly_fields)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "cards":
