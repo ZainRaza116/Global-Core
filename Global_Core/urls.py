@@ -4,6 +4,8 @@ from .views import InvoiceDetailView
 from .views import SalesByCardNumberAPIView
 from .views import ChangeTransactionTypeAPIView
 from .views import WalletAPIView
+from .views import WithdrawalRequestAPIView
+
 urlpatterns = [
     #              *****************  API END POINTS  *********************
     path("get_merchants/", views.get_merchants, name="get_merchants"),
@@ -16,4 +18,5 @@ urlpatterns = [
     path('cms/Global_Core/chargeback/', views.chargeback_view, name='chargeback'),
     path('Global_Core/chargeback/paymentmethod', ChangeTransactionTypeAPIView.as_view(), name='chargeback payment'),
     path('Global_Core/chargeback/wallet', WalletAPIView.as_view(), name='wallet_payment'),
+    path('withdrawal-request/', WithdrawalRequestAPIView.as_view(), name='withdrawal-request'),
 ]

@@ -145,7 +145,7 @@
             </div>
         </div>
         <div class="button-box">
-            <button data-bs-toggle="modal" data-bs-target="#exampleModal">Withdraw</button>
+            <button data-bs-toggle="modal" id="withdrawButton" data-bs-target="#exampleModal">Withdraw</button>
         </div>
     </div>
     <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -157,35 +157,85 @@
                 </div>
                 <div class="modal-body d-flex flex-column gap-2">
                     <label>How much you want to withdraw ?</label>
-                    <input type="number" class="form-control" />
+                    <input type="number" id="withdrawAmount" class="form-control" />
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="no-button" data-bs-dismiss="modal">No</button>
-                    <button type="button" class="yes-button">Sure</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                    <button type="button" class="btn btn-primary" onclick="withdraw()">Sure</button>
                 </div>
             </div>
         </div>
     </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4"
         crossorigin="anonymous"></script>
 </body>
  <script>
-      var priceDoller;
-    var priceRupees;
+             function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const csrftoken = getCookie('csrftoken');
+        var priceDoller;
+        var priceRupees;
 
         fetch('http://127.0.0.1:8000/Global_Core/chargeback/wallet')
             .then(response => response.json())
             .then(data => {
+                console.log(data)
                 priceDoller = data.target;
                 priceRupees = data.commision;
                 document.getElementById('priceDollerValue').innerHTML = priceDoller;
     document.getElementById('priceRupeesValue').innerHTML = priceRupees;
                 // document.getElementById('daily_threshold').textContent =
                 document.getElementById('commission_amount').textContent = 'PKR ' + data.Total_Commision;
+                        if (data.Total_Commision < 0) {
+            // Hide the withdraw button
+            document.getElementById('withdrawButton').style.display = 'none';
+        } else {
+            // Show the withdraw button
+            document.getElementById('withdrawButton').style.display = 'block';
+        }
             })
             .catch(error => console.error('Error fetching data:', error));
+function withdraw() {
+    const withdrawAmount = document.getElementById('withdrawAmount').value;
 
+    fetch('http://127.0.0.1:8000/withdrawal-request/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({ amount: withdrawAmount })
+    })
+    .then(response => {
+        if (response.ok) {
+            alert('Withdrawal request sent successfully.');
+            document.getElementById('withdrawAmount').value = '';
+            $('#exampleModal').modal('hide');
+        } else {
+            return response.json().then(data => {
+                throw new Error(data.error || 'Failed to send withdrawal request.');
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error sending withdrawal request:', error);
+        alert("Error")
+    });
+}
     </script>
-
 </html>

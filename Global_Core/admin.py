@@ -1,4 +1,5 @@
 import requests
+from django.db import transaction
 from django.db.models import Count, Sum, Q
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import redirect
@@ -22,12 +23,13 @@ from paypalcheckoutsdk.orders import OrdersCreateRequest
 from .access_api import get_merchant_api_key, get_merchant_login_key
 from .permission import IsEmployeePermission
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, reverse
 from .models import Sales
 from django.forms.models import BaseInlineFormSet
 from .forms import SalesForm,CardForm
 c_user = get_user_model()
 from semantic_admin import SemanticStackedInline, SemanticTabularInline
+from django.contrib import messages
 
 print(get_user_model())
 
@@ -192,15 +194,15 @@ class SalesAdmin(admin.ModelAdmin):
         return None
     modified_added_by.short_description = 'Added By'
 
-    # def get_exclude(self, request, obj=None):
-    #     excludes = super().get_exclude(request, obj=obj) or ()
-    #     return excludes + ('transaction_type',)
+    def get_exclude(self, request, obj=None):
+        excludes = super().get_exclude(request, obj=obj) or ()
+        return excludes + ('transaction_type', 'wallet_check')
 
-    # def get_readonly_fields(self, request, obj=None):
-    #     readonly_fields = list(super().get_readonly_fields(request, obj))
-    #     if obj and obj.transaction_type in ['Sale', 'Authorize', 'Charge Back']:
-    #         readonly_fields += [field.name for field in Sales._meta.fields]
-    #     return tuple(readonly_fields)
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = list(super().get_readonly_fields(request, obj))
+        if obj and obj.transaction_type in ['Sale', 'Authorize', 'Charge Back']:
+            readonly_fields += [field.name for field in Sales._meta.fields]
+        return tuple(readonly_fields)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "cards":
@@ -978,8 +980,105 @@ class DashboardAdmin(admin.ModelAdmin):
             context['sales_data_json'] = json.dumps(sales_data_list)
             return context
 
+
 class InvoiceAdmin(admin.ModelAdmin):
         list_display = ['sale', 'payment', 'security', 'gateway','Merchant_Name']
+
+
+class WithdrawalRequestAdmin(admin.ModelAdmin):
+    def get_list_display(self, request):
+        if request.user.is_superuser:
+            return ['get_user_name', 'amount', 'requested_at','processed','Approval']
+        else:
+            return ['get_user_name', 'amount', 'requested_at','processed','Message']
+    search_fields = ('user__username', 'user__email')
+
+    def get_user_name(self, obj):
+        return obj.user.Name if obj.user else "Unknown"
+
+    get_user_name.short_description = 'User Name'
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        if request.user.is_superuser:
+            return queryset.filter(processed=False)
+        return queryset.filter(user=request.user)
+
+    def Message(self, obj):
+        status_html = ""
+        if obj.message == 'Pending':
+            status_html = '<span style="color: orange; font-weight: bold;">Request Pending</span>'
+        elif obj.message == 'Decline':
+            status_html = '<span style="color: red; font-weight: bold;">Request Decline</span>'
+        elif obj.message == 'Accepted':
+            status_html = '<span style="color: green; font-weight: bold;">Accepted</span>'
+        return format_html(status_html)
+
+
+    def Approval(self, obj):
+        approval_image_url = '/static/check-mark.png'
+        decline_image_url = '/static/cancel.png'
+
+        approval_html = format_html(
+            '<a href="{}"><img src="{}" alt="Payment" style="justify_content:center; max-height: 20px; '
+            'max-width: 20px; '
+            'margin-right: 5px;" /></a>',
+            f"/cms/Global_Core/withdrawalrequest/{obj.id}/approve/", approval_image_url)
+
+        decline_html = format_html(
+            '<a href="{}"><img src="{}" alt="Payment" style="justify_content:center; max-height: 20px; '
+            'max-width: 20px; '
+            
+            'margin-right: 5px;" /></a>',
+            f"/cms/Global_Core/withdrawalrequest/{obj.id}/decline/", decline_image_url)
+
+        return format_html(
+            '<div style="display: flex; margin-left: 42px">' 
+            '{}<div style="margin-right: 53px;"></div>{}' 
+            '</div>',
+            approval_html, decline_html)
+
+    Approval.short_description = 'Approve/Decline'
+
+
+    def get_urls(self):
+        urls = super().get_urls()
+        my_urls = [
+            path("<int:request_id>/approve/", self.admin_site.admin_view(self.approve),
+                 name="wallet"),
+            path("<int:request_id>/decline/", self.admin_site.admin_view(self.decline), name="decline")
+        ]
+        return my_urls + urls
+
+    def decline(self, request, request_id):
+        try:
+            withdrawal_request = WithdrawalRequest.objects.get(id=request_id)
+            withdrawal_request.processed = True
+            withdrawal_request.message = "Decline"
+            withdrawal_request.save()
+            messages.success(request, 'Withdrawal request declined successfully.')
+            return HttpResponseRedirect(
+                reverse('admin:%s_%s_changelist' % (self.model._meta.app_label, self.model._meta.model_name)))
+        except WithdrawalRequest.DoesNotExist:
+            return HttpResponse("Withdrawal request not found.")
+
+    def approve(self, request, request_id):
+        try:
+            with transaction.atomic():
+                withdrawal_request = WithdrawalRequest.objects.get(id=request_id)
+                user_wallet = Wallet.objects.get(user=withdrawal_request.user)
+                user_wallet.value -= float(withdrawal_request.amount)
+                user_wallet.save()
+                withdrawal_request.processed = True
+                withdrawal_request.message = "Accepted"
+                withdrawal_request.save()
+
+                messages.success(request, 'Withdrawal request accepted successfully.')
+                return HttpResponseRedirect(
+                    reverse('admin:%s_%s_changelist' % (self.model._meta.app_label, self.model._meta.model_name)))
+        except WithdrawalRequest.DoesNotExist:
+            return HttpResponse("Withdrawal request not found.")
+
 
 
 
@@ -994,4 +1093,5 @@ admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Dashboard, DashboardAdmin)
 # admin.site.register(urls)
 admin.site.register(Invoice, InvoiceAdmin)
+admin.site.register(WithdrawalRequest, WithdrawalRequestAdmin)
 # admin.site.unregister(Group)

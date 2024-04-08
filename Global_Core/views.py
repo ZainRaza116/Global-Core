@@ -24,6 +24,7 @@ from rest_framework.decorators import api_view
 from .models import Sales, CustomUser
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
+from .serializers import WithdrawalRequestSerializer
 from django.db.models.functions import TruncDate
 #          ************ APIs *********************
 def get_merchants(request):
@@ -198,7 +199,7 @@ class ChangeTransactionTypeAPIView(APIView):
             wallet.value = wallet.value - commission_adjustment
             wallet.save()
             print(f"Wallet After: {wallet.value}")
-            # sale.transaction_type = 'Charge Back'
+            sale.transaction_type = 'Charge Back'
             sale.save()
             return Response({'message': 'Transaction type changed to Charge Back successfully',
                              'commission_adjustment': commission_adjustment},
@@ -207,6 +208,9 @@ class ChangeTransactionTypeAPIView(APIView):
             return Response({'error': 'Sale not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+def chargeback_view(request):
+    return render(request, 'chargeback.html')
 
 def chargeback_view(request):
     return render(request, 'chargeback.html')
@@ -255,3 +259,21 @@ class WalletAPIView(APIView):
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class WithdrawalRequestAPIView(APIView):
+    def post(self, request):
+        request.data['user'] = request.user.id
+        serializer = WithdrawalRequestSerializer(data=request.data)
+        print(request.data)
+        if serializer.is_valid():
+            withdrawal_amount = serializer.validated_data['amount']
+            wallet_value = request.user.wallet.value
+
+            if withdrawal_amount > wallet_value:
+                raise ValidationError("Withdrawal amount cannot exceed the wallet value.")
+
+            serializer.save(user=request.user)
+            print("Done")
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

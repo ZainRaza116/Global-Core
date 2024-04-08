@@ -51,6 +51,7 @@ class Expenses(models.Model):
     class Meta:
         verbose_name_plural = "Expenses"
 
+
 class Company(models.Model):
     company_name = models.CharField(max_length=255, blank=False, null=False, verbose_name='Company Name')
     company_address = models.CharField(max_length=255, blank=False, null=False, verbose_name='Company Address')
@@ -322,13 +323,6 @@ def create_or_update_wallet(sender, instance, created, **kwargs):
         print("No Wallet")
         pass
 
-@receiver(post_save, sender=CustomUser)
-def create_user_wallet(sender, instance, created, **kwargs):
-    if created:
-        print("Creating wallet")
-        Wallet.objects.create(user=instance)
-
-
 class Invoice(models.Model):
     PAYMENT_CHECK_CHOICES = [
         ('yes', 'Yes'),
@@ -371,3 +365,11 @@ class Wallet(models.Model):
 
     def __str__(self):
         return f"Wallet for {self.user.username}"
+
+
+class WithdrawalRequest(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    requested_at = models.DateTimeField(auto_now_add=True)
+    processed = models.BooleanField(default=False)
+    message = models.CharField(max_length=255, blank=False, default="Pending", verbose_name='Message')
