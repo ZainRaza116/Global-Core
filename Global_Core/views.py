@@ -186,16 +186,22 @@ class ChangeTransactionTypeAPIView(APIView):
             target = float(user.target)
             commission = float(user.commission)
             print(sale_amount)
-
-            # Get sales on the same day as the changed sale
             sales_on_same_day = Sales.objects.filter(added_by=user, sales_date=sale.sales_date)
             total_sales_on_same_day = sales_on_same_day.aggregate(total_sales=Sum('amount'))['total_sales']
             print(total_sales_on_same_day)
             total_sale = total_sales_on_same_day - sale_amount
-            slabs_hit_after_change = total_sale // target
-            commission_adjustment = (slabs_hit_after_change * commission) - 25
+            if total_sale == 0:
+                slabs_hit_after_change = sale_amount//target
+            else:
+                slabs_hit_after_change = total_sale // target
+            commission_adjustment = (slabs_hit_after_change * commission) + 25
             wallet = user.wallet
-            print(f"Wallet Before: {wallet.value}")
+            print(f"total_sale: {total_sale}")
+            print(f"slab_hit_after_change: {slabs_hit_after_change}")
+            print(f"target: {target}")
+            print(f"commission: {commission}")
+            print(f"Commision Adjustment: {commission_adjustment}")
+
             wallet.value = wallet.value - commission_adjustment
             wallet.save()
             print(f"Wallet After: {wallet.value}")
@@ -204,16 +210,20 @@ class ChangeTransactionTypeAPIView(APIView):
             return Response({'message': 'Transaction type changed to Charge Back successfully',
                              'commission_adjustment': commission_adjustment},
                             status=status.HTTP_200_OK)
+
         except Sales.DoesNotExist:
             return Response({'error': 'Sale not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-def chargeback_view(request):
-    return render(request, 'chargeback.html')
 
 def chargeback_view(request):
     return render(request, 'chargeback.html')
+
+
+def chargeback_view(request):
+    return render(request, 'chargeback.html')
+
 
 class WalletAPIView(APIView):
     def get(self, request):

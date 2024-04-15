@@ -153,15 +153,71 @@
                 width: 100%;
             }
         }
+        .success-animation { margin:130px auto; display: none}
+
+.checkmark {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: block;
+    stroke-width: 2;
+    stroke: #4bb71b;
+    stroke-miterlimit: 10;
+    box-shadow: inset 0px 0px 0px #4bb71b;
+    animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+    position:relative;
+    top: 5px;
+    right: 5px;
+   margin: 0 auto;
+}
+.checkmark__circle {
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    stroke-width: 2;
+    stroke-miterlimit: 10;
+    stroke: #4bb71b;
+    fill: #fff;
+    animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+
+}
+
+.checkmark__check {
+    transform-origin: 50% 50%;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+}
+
+@keyframes stroke {
+    100% {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes scale {
+    0%, 100% {
+        transform: none;
+    }
+
+    50% {
+        transform: scale3d(1.1, 1.1, 1);
+    }
+}
+
+@keyframes fill {
+    100% {
+        box-shadow: inset 0px 0px 0px 30px #4bb71b;
+    }
+}
     </style>
 </head>
 
 <body>
     <div style="display: flex; flex-direction: column; align-items: center;">
-        <div>
+        <div class="heading-div">
             <p style="font-size: 30px; font-weight: 700; margin-top: 50px; margin-bottom: 30px;">Chargeback Amount</p>
         </div>
-        <div class="header">
+        <div id="header-div" class="header">
             <div class="search-inputs">
                 <div style="display: flex; flex-direction: column; gap: 3px;">
                     <label style="font-size: 12px; font-weight: 600;">Card Number (Last Four Digit)</label>
@@ -197,7 +253,7 @@
             </div>
         </div>
 
-        <div class="content">
+        <div id="content-div" class="content">
             <table class="table">
                 <tr class="table-header">
                     <th>Name</th>
@@ -240,7 +296,7 @@
                                 <td style="border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px" id="modal_card"></td>
                             </tr>
                             <tr style="font-size: 12px; height: 30px; border: 1px solid rgba(128, 128, 128, 0.301); background-color: rgba(128, 128, 128, 0.1)">
-                                <td style="width: 150px; border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px" >Amount</td>
+                                <td style="width: 150px; border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px" >Amount ($)</td>
                                 <td style="border: 1px solid rgba(128, 128, 128, 0.301); padding: 0 5px"id="modal_amount">$ </td>
                             </tr>
                             <tr style="font-size: 12px; height: 30px; border: 1px solid rgba(128, 128, 128, 0.301);">
@@ -272,10 +328,15 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
-                        <button type="button" class="btn btn-success" data-bs-dismiss="modal" onclick="fn_chargeback()">Yes</button>
+                        <button type="button" class="btn btn-success" data-bs-dismiss="modal" id="yesChargeBack">Yes</button>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div class="success-animation" id="animatedMessage">
+            <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none" /><path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" /></svg>
+            <p style="text-align: center; margin-top: 40px">Chargeback Successful</p>
         </div>
 
     </div>
@@ -390,13 +451,13 @@
 
                             document.getElementById("modalcustomername").innerHTML = sale.customer_name;
                             document.getElementById("modal_customer_address").innerHTML = sale.customer_address;
-                             console.log(sale.card_number.card_number)
+                            console.log(sale.card_number.card_number)
                             document.getElementById("modal_card").innerHTML = sale.card_number.card_number;
                             document.getElementById("modal_reason").innerHTML = sale.reason;
                             document.getElementById("modal_company").innerHTML = sale.last_invoice.Merchant_Name;
                             document.getElementById("modal_gateway").innerHTML = sale.last_invoice.gateway;
                             document.getElementById("modal_amount").innerHTML = sale.amount;
-                        if (TransactionSale1 !== "Charge Back") {
+                            if (TransactionSale1 !== "Charge Back") {
                                 console.log("TransactionSale1 ===> sale === > ", TransactionSale1)
                                 document.getElementById("btn-secondModal").innerHTML = "Charge Back";
                                 var ChargeBackBtn = document.getElementById("btn-secondModal");
@@ -426,54 +487,68 @@
                 }
             }
 
-function getCookie(name) {
-    var cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        var cookies = document.cookie.split(';');
-        for (var i = 0; i < cookies.length; i++) {
-            var cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
+            function getCookie(name) {
+                var cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    var cookies = document.cookie.split(';');
+                    for (var i = 0; i < cookies.length; i++) {
+                        var cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
             }
-        }
-    }
-    return cookieValue;
-}
 
-var csrftoken = getCookie('csrftoken');
+            var csrftoken = getCookie('csrftoken');
 
-$(document).on('click', '.btn-success', function () {
-    // Retrieve the sale_id from the selected row
-    var saleId = selectedSaleId;
-    var Type = TransactionSale1
-    if (saleId) {
-        console.log("********",Type)
-        // Retrieve the CSRF token
-        var csrftoken = getCookie('csrftoken');
+            $(document).on('click', '.btn-success', function () {
+                // Retrieve the sale_id from the selected row
+                var saleId = selectedSaleId;
+                var Type = TransactionSale1
+                if (saleId) {
+                    console.log("********", Type)
+                    // Retrieve the CSRF token
+                    var csrftoken = getCookie('csrftoken');
 
-        // Make the AJAX request with the dynamic sale_id
-        $.ajax({
-            url: 'http://127.0.0.1:8000/Global_Core/chargeback/paymentmethod',
-            type: 'POST',
-            data: {
-                sale_id: saleId, // Use the dynamic sale_id here
-                csrfmiddlewaretoken: csrftoken
-            },
-            success: function (response) {
-                console.log('AJAX request successful');
-                console.log(response);
-            },
-            error: function (xhr, errmsg, err) {
-                console.log('Error occurred:', err, errmsg);
-            }
+                    // Make the AJAX request with the dynamic sale_id
+                    $.ajax({
+                        url: 'http://127.0.0.1:8000/Global_Core/chargeback/paymentmethod',
+                        type: 'POST',
+                        data: {
+                            sale_id: saleId, // Use the dynamic sale_id here
+                            csrfmiddlewaretoken: csrftoken
+                        },
+                        success: function (response) {
+                            console.log('AJAX request successful');
+                            console.log(response);
+                        },
+                        error: function (xhr, errmsg, err) {
+                            console.log('Error occurred:', err, errmsg);
+                        }
+                    });
+                }
+            });
         });
-    }
-});
 
-// Define the fn_chargeback function
-const fn_chargeback = () => {
-    window.location.reload();
-};})
+    document.getElementById("yesChargeBack").addEventListener('click', () => {
+        setTimeout(() => {
+             window.location.reload();
+        }, 4000);
+
+        const animatedMessage = document.getElementById("animatedMessage");
+        animatedMessage.style.display = "block";
+
+        const contentDiv = document.getElementById("content-div");
+        contentDiv.style.display = "none";
+
+        const headerDiv = document.getElementById("header-div");
+        headerDiv.style.display = "none";
+
+        const headingDiv = document.getElementById("heading-div");
+        headingDiv.style.display = "none";
+    })
     </script>
 </body>

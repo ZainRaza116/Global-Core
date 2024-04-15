@@ -324,11 +324,84 @@
   HTML { font-size: 1.5625em; } /* 25 / 16 = 1.5625 */
 
 }
+
+        .success-animation { margin:150px auto; display: none}
+
+.checkmark {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: block;
+    stroke-width: 2;
+    stroke: #4bb71b;
+    stroke-miterlimit: 10;
+    box-shadow: inset 0px 0px 0px #4bb71b;
+    animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+    position:relative;
+    top: 5px;
+    right: 5px;
+   margin: 0 auto;
+}
+.checkmark__circle {
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    stroke-width: 2;
+    stroke-miterlimit: 10;
+    stroke: #4bb71b;
+    fill: #fff;
+    animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+
+}
+
+.checkmark__check {
+    transform-origin: 50% 50%;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+}
+
+@keyframes stroke {
+    100% {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes scale {
+    0%, 100% {
+        transform: none;
+    }
+
+    50% {
+        transform: scale3d(1.1, 1.1, 1);
+    }
+}
+
+@keyframes fill {
+    100% {
+        box-shadow: inset 0px 0px 0px 30px #4bb71b;
+    }
+}
+.alert-box{
+    position: fixed;
+    z-index: 999;
+    top: -40px;
+    width: 80%;
+    background-color: #ff5353;
+    height: 40px;
+    border-radius: 5px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    transition: 0.2s all ease-in;
+}
     </style>
 </head>
-<form id="paymentForm" method="POST" action="/cms/Global_Core/sales/{{ object_id }}/payment/">
+<form id="paymentForm" method="POST">
     {% csrf_token %}
-    <div class="main">
+    <div id="main" class="main">
         <div class="invoice">
             <div class="header">
                 <div style="display: flex; flex-direction: column; gap: 5px">
@@ -475,7 +548,7 @@
         </div>
 
         <div class="btn-box">
-                <button type="submit" onclick={{fn_submit}}>Submit</button>
+                <button type="submit" onclick={{fn_submit}} id="submitPayment">Submit</button>
             <a id="getDetailsButton" type="submit"><i class="icon-link"></i>
                 Generate Link</a>
             </div>
@@ -493,6 +566,15 @@
             </div>
         </div>
     </div>
+    </div>
+
+    <div class="success-animation" id="animatedMessage">
+        <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none" /><path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" /></svg>
+        <p style="text-align: center; margin-top: 40px">Payment Successful</p>
+    </div>
+
+    <div class="alert-box" id="alert-box">
+        <p id="errorMessage"></p>
     </div>
 
 
@@ -513,6 +595,48 @@
 
 <!--</section>-->
     {% endif %}
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script> <!-- Include Axios library -->
+<script>
+    // Function to handle form submission
+    function handleSubmit(event) {
+        event.preventDefault(); // Prevent default form submission
+
+        // Get form data
+        var formData = new FormData(document.getElementById('paymentForm'));
+        document.getElementById("submitPayment").innerHTML = "Loading...";
+        document.getElementById("submitPayment").disabled = true;
+        // Make Axios request
+        axios.post('/cms/Global_Core/sales/{{ object_id }}/payment/', formData)
+            .then(function (response) {
+                // Handle success response
+                console.log(response.data); // Log response data to console
+                // Display success message to the user
+                const animatedMessage = document.getElementById("animatedMessage");
+                animatedMessage.style.display = "block";
+                const mainDiv = document.getElementById("main");
+                mainDiv.style.display = "none";
+            })
+            .catch(function (error) {
+                // Handle error response
+                console.error('Error:', error); // Log error to console
+                // Display error message to the user
+
+                document.getElementById("submitPayment").innerHTML = "Submit Again";
+                document.getElementById("submitPayment").disabled = false;
+
+                const alertMessage = document.getElementById("alert-box");
+                alertMessage.style.top = "20px";
+                document.getElementById("errorMessage").innerHTML = "Fill all Fields";
+                setTimeout(() => {
+                    const alertMessage = document.getElementById("alert-box");
+                    alertMessage.style.top = "-40px";
+                }, 2000)
+            });
+    }
+
+    // Attach event listener to form submission
+    document.getElementById('paymentForm').addEventListener('submit', handleSubmit);
+</script>
 
 <script>
     const toastTrigger = document.getElementById('getDetailsButton')
@@ -539,7 +663,6 @@ document.getElementById('gateway-select').addEventListener('change', function() 
         var csrftoken = getCookie('csrftoken');
 
 fetch('/get_merchants/?gateway_id=' + gatewayId, {
-
             method: 'GET',
             headers: {
                 'X-CSRFToken': csrftoken
