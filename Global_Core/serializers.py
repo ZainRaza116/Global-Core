@@ -19,3 +19,4 @@ class WithdrawalRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = WithdrawalRequest
         fields = ['id', 'user', 'amount', 'requested_at', 'processed']
+

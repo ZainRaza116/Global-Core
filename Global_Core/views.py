@@ -25,6 +25,8 @@ from .models import Sales, CustomUser
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
 from .serializers import WithdrawalRequestSerializer
+import openai
+
 from django.db.models.functions import TruncDate
 #          ************ APIs *********************
 def get_merchants(request):
@@ -269,7 +271,6 @@ class WalletAPIView(APIView):
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-print("")
 
 
 class WithdrawalRequestAPIView(APIView):
@@ -288,3 +289,33 @@ class WithdrawalRequestAPIView(APIView):
             print("Done")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MealSuggestion(APIView):
+    def post(self, request):
+        openai.api_key = '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'
+        age = request.data.get('age')
+        height = request.data.get('height')
+        increase = request.data.get('increase')
+        amount = request.data.get('amount')
+        unit = request.data.get('unit')
+        vegetarian = request.data.get('vegetarian')
+        specific_allergies = request.data.get('specific_allergies')
+        prompt = f'Hello chat GPT my age is {age} height is {height}cm and I want to {"increase" if increase else "decrease"} my weight by {amount} {unit}, please suggest me  {"vegetarian" if vegetarian else "non-vegetarian"} meal and we are allergic to {specific_allergies} and specify BreakFast, Evening and Dinner'
+
+        try:
+            response = openai.Completion.create(
+                engine="gpt-3.5-turbo-instruct",
+                prompt=prompt,
+                max_tokens=1000
+            )
+            data = response.choices[0].text.strip()
+            # Find the index of the word "BreakFast" (case insensitive)
+            index_breakfast = data.lower().find("breakfast")
+            if index_breakfast != -1:
+                # Remove all text before "BreakFast"
+                data = data[index_breakfast + len("Breakfast"):]
+            print(data)
+            return Response({'meal_suggestion': data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

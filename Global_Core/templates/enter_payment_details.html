@@ -609,12 +609,25 @@
         axios.post('/cms/Global_Core/sales/{{ object_id }}/payment/', formData)
             .then(function (response) {
                 // Handle success response
-                console.log(response.data); // Log response data to console
+                console.log("==========", response.data); // Log response data to console
                 // Display success message to the user
-                const animatedMessage = document.getElementById("animatedMessage");
-                animatedMessage.style.display = "block";
-                const mainDiv = document.getElementById("main");
-                mainDiv.style.display = "none";
+                if(response.data.code == 200){
+                    const animatedMessage = document.getElementById("animatedMessage");
+                    animatedMessage.style.display = "block";
+                    const mainDiv = document.getElementById("main");
+                    mainDiv.style.display = "none";
+                }else{
+                    document.getElementById("submitPayment").innerHTML = "Submit Again";
+                    document.getElementById("submitPayment").disabled = false;
+
+                    const alertMessage = document.getElementById("alert-box");
+                    alertMessage.style.top = "20px";
+                    document.getElementById("errorMessage").innerHTML = "Transaction Failed";
+                    setTimeout(() => {
+                        const alertMessage = document.getElementById("alert-box");
+                        alertMessage.style.top = "-40px";
+                    }, 2000)
+                }
             })
             .catch(function (error) {
                 // Handle error response

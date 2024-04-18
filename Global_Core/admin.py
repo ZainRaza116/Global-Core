@@ -682,7 +682,6 @@ class SalesAdmin(admin.ModelAdmin):
                                                   address, state, zip_code, merchant_id)
                 transaction_type = json_response.get('transaction_type')
                 status = json_response.get('status')
-
                 if status == 'Success':
                     sales = Sales.objects.get(pk=object_id)
                     sales.transaction_type = transaction_type
@@ -694,10 +693,26 @@ class SalesAdmin(admin.ModelAdmin):
                         Merchant_Name=merchant,
                         payment_check='Yes'
                     )
-
+                    status_message = 'Success'
                     print("Invoice has been created")
                     sales.save()
-                return JsonResponse(json_response)
+                    response_data = {
+                        'message': 'Transaction Pass',
+                        'code': '200'
+                    }
+                else:
+                    error_code = json_response.get('error_code', '')
+                    error_message = json_response.get('error_message', '')
+                    status_message = 'Error'
+                    response_data = {
+                        'message': 'Transaction Fail',
+                        'code': '401'
+                    }
+                    print(f"Error Code: {error_code}")
+                    print(f"Error message: {error_message}")
+                    print(f"Status message: {status_message}")
+
+                return JsonResponse(response_data)
             elif payment_method == 'Authorize' and gateway.lower() == 'authorize.net':
                 expirationDate = f"{expirationMonth}/{expirationYear}"
                 json_response = authorize_credit_card(amount, cardNumber, expirationDate, cardCod, firstName, lastName,
@@ -717,7 +732,27 @@ class SalesAdmin(admin.ModelAdmin):
                         Merchant_Name=merchant,
                         payment_check='Yes'
                     )
-                return JsonResponse(json_response)
+                    status_message = 'Success'
+                    print("Invoice has been created")
+                    sales.save()
+                    response_data = {
+                        'message': 'Transaction Pass',
+                        'code': '200'
+                    }
+                else:
+                    error_code = json_response.get('error_code', '')
+                    error_message = json_response.get('error_message', '')
+                    status_message = 'Error'
+                    response_data = {
+                        'message': 'Transaction Fail',
+                        'code': '401'
+                    }
+                    print(f"Error Code: {error_code}")
+                    print(f"Error message: {error_message}")
+                    print(f"Status message: {status_message}")
+                print(response_data)
+
+                return JsonResponse(response_data)
 
                 return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
             # **************************  STRIPE  ******************************
@@ -740,7 +775,18 @@ class SalesAdmin(admin.ModelAdmin):
                             Merchant_Name=merchant,
                             payment_check='Yes'
                         )
-                    return JsonResponse(charge_status)
+                        response_data = {
+                            'message': 'Transaction Pass',
+                            'code': '200'
+                        }
+                    else:
+                        response_data = {
+                            'message': 'Transaction Fail',
+                            'code': '401'
+                        }
+                    print(response_data)
+
+                    return JsonResponse(response_data)
                 except Exception as e:
                     error_message = "An error occurred: {}".format(e)
                     print("Error:", error_message)
@@ -764,7 +810,18 @@ class SalesAdmin(admin.ModelAdmin):
                             Merchant_Name=merchant,
                             payment_check='Yes'
                         )
-                    return JsonResponse(charge_status)
+                        response_data = {
+                            'message': 'Transaction Pass',
+                            'code': '200'
+                        }
+                    else:
+                        response_data = {
+                            'message': 'Transaction Fail',
+                            'code': '401'
+                        }
+                    print(response_data)
+
+                    return JsonResponse(response_data)
                 except Exception as e:
                     error_message = "An error occurred: {}".format(e)
                     print("Error:", error_message)
@@ -813,7 +870,19 @@ class SalesAdmin(admin.ModelAdmin):
                             Merchant_Name=merchant,
                             payment_check='Yes'
                         )
-                    return JsonResponse(response_value)
+                        response_data = {
+                            'message': 'Transaction Pass',
+                            'code': '200'
+                        }
+                    else:
+                        response_data = {
+                            'message': 'Transaction Fail',
+                            'code': '401'
+                        }
+                    print(response_data)
+
+                    return JsonResponse(response_data)
+
 
                 except json.JSONDecodeError:
                     return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
@@ -863,7 +932,19 @@ class SalesAdmin(admin.ModelAdmin):
                             Merchant_Name=merchant,
                             payment_check='Yes'
                         )
-                    return JsonResponse(response_value)
+                        response_data = {
+                            'message': 'Transaction Pass',
+                            'code': '200'
+                        }
+                    else:
+                        response_data = {
+                            'message': 'Transaction Fail',
+                            'code': '401'
+                        }
+                    print(response_data)
+
+                    return JsonResponse(response_data)
+
                 except json.JSONDecodeError:
                     return redirect('/admin/Global_Core/sales/{}/payment/'.format(object_id))
             elif security == '3D' and gateway.lower() == 'nmi':
@@ -903,7 +984,6 @@ class SalesAdmin(admin.ModelAdmin):
                 selected_card = None
             else:
                 selected_account = sales.Accounts.filter(account_to_be_used=True).first()
-
             print("*********")
             print(selected_card)
             today_date = datetime.now().date()
@@ -945,7 +1025,6 @@ class SalesAdmin(admin.ModelAdmin):
                 Merchant_Name=merchant
             )
             invoice_id = invoice.id
-
             context = {
                 'invoice_id': invoice_id,
                 'client_info': customer_info,
@@ -1013,7 +1092,6 @@ class WithdrawalRequestAdmin(admin.ModelAdmin):
         elif obj.message == 'Accepted':
             status_html = '<span style="color: green; font-weight: bold;">Accepted</span>'
         return format_html(status_html)
-
 
     def Approval(self, obj):
         approval_image_url = '/static/check-mark.png'
