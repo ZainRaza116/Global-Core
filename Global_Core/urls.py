@@ -1,10 +1,7 @@
 from django.urls import path
 from . import views
-from .views import InvoiceDetailView
-from .views import SalesByCardNumberAPIView
-from .views import ChangeTransactionTypeAPIView
-from .views import WalletAPIView
-from .views import WithdrawalRequestAPIView,MealSuggestion
+from .views import *
+
 
 
 urlpatterns = [
@@ -21,6 +18,10 @@ urlpatterns = [
     path('Global_Core/chargeback/wallet', WalletAPIView.as_view(), name='wallet_payment'),
     path('withdrawal-request/', WithdrawalRequestAPIView.as_view(), name='withdrawal-request'),
     path('meal-suggestion/', MealSuggestion.as_view(), name='meal-suggestion'),
+    path('add_center/', add_center, name='add_center'),
+    path('get_centers/', get_centers, name='get_center'),
     path("license_index/", views.license_index, name="license_index"),
+    path("filtered_centers/", views.filtered_centers, name="license_index"),
+    path("search_centers/", views.search_centers, name="license_index"),
     path("center_index/", views.center_index, name="license_index")
 ]

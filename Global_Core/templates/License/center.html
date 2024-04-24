@@ -158,7 +158,6 @@
         }
 
         /* ==================== content table styling ======================= */
-
         .table-parent {
             overflow: auto;
             border: 1px solid rgba(0, 0, 0, 0);
@@ -296,47 +295,22 @@
                     <p data-bs-toggle="modal" data-bs-target="#exampleModal">Add Center</p>
                 </div>
                 <!-- table -->
-                <div class="table-parent">
-                    <table class="table-child">
-                        <thead class="table-header">
-                            <tr>
-                                <td>Id</td>
-                                <td>Name</td>
-                                <td>Phone #</td>
-                                <td>Email Address</td>
-                                <td>Address</td>
-                                <td>Status</td>
-                                <td>Action</td>
-                            </tr>
-                        </thead>
-                        <tbody class="table-body">
-                            <tr>
-                                <td>01</td>
-                                <td>Zain</td>
-                                <td>03034532335</td>
-                                <td>zain@gmail.com</td>
-                                <td>Lahore, Pakistan</td>
-                                <td class="status-pending"><span>Pending</span></td>
-                                <td>
-                                    <i class="fa-solid fa-pen-to-square" style="cursor: pointer;"></i>
-                                    &nbsp;
-                                    <i class="fa-solid fa-trash" style="cursor: pointer;"></i>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>02</td>
-                                <td>Zain</td>
-                                <td>03034532335</td>
-                                <td>zain@gmail.com</td>
-                                <td>Lahore, Pakistan</td>
-                                <td class="status-approved"><span>Approved</span></td>
-                                <td>
-                                    <i class="fa-solid fa-pen-to-square" style="cursor: pointer;"></i>
-                                    &nbsp;
-                                    <i class="fa-solid fa-trash" style="cursor: pointer;"></i>
-                                </td>
-                            </tr>
-                        </tbody>
+                         <div class="table-parent">
+                <table class="table-child">
+                    <thead class="table-header">
+                        <tr>
+                            <td>Id</td>
+                            <td>Name</td>
+                            <td>Phone #</td>
+                            <td>Phone Number</td>
+                            <td>Address</td>
+                            <td>Status</td>
+                            <td>Action</td>
+                        </tr>
+                    </thead>
+                    <tbody class="table-body" id="centerTableBody">
+                        <!-- Center data will be populated here -->
+                    </tbody>
                     </table>
                 </div>
             </div>
@@ -356,37 +330,102 @@
                     </p>
                 </div>
                 <!-- modal content -->
-                <div style="display: flex; flex-direction: column; gap: 10px; padding: 20px 0;">
-                    <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 15px;">
-                        <label style="font-size: 13px; font-weight: bold;">Center Name</label>
-                        <input
-                            style="border: 1px solid gray; border-radius: 3px; font-size: 12px; height: 30px; padding: 0 8px;"
-                            placeholder="Enter Center Name" />
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 15px;">
-                        <label style="font-size: 13px; font-weight: bold;">Person Name</label>
-                        <input
-                            style="border: 1px solid gray; border-radius: 3px; font-size: 12px; height: 30px; padding: 0 8px;"
-                            placeholder="Enter your Name" />
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 15px;">
-                        <label style="font-size: 13px; font-weight: bold;">Contact Email</label>
-                        <input
-                            style="border: 1px solid gray; border-radius: 3px; font-size: 12px; height: 30px; padding: 0 8px;"
-                            placeholder="***@gmail.com" />
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 15px;">
-                        <label style="font-size: 13px; font-weight: bold;">Contact Number</label>
-                        <input
-                            style="border: 1px solid gray; border-radius: 3px; font-size: 12px; height: 30px; padding: 0 8px;"
-                            placeholder="Enter Your Phone Number" />
-                    </div>
-                    <input type="submit" value="Submit" data-bs-dismiss="modal" aria-label="Close"
-                        style="margin: 10px 15px 0px 15px; font-size: 13px; height: 30px; font-weight: bold; padding-top: 2px;" />
+    <div style="display: flex; flex-direction: column; gap: 10px; padding: 20px 0;">
+        <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 15px;">
+            <label style="font-size: 13px; font-weight: bold;">Center Name</label>
+            <input id="centerName" style="border: 1px solid gray; border-radius: 3px; font-size: 12px; height: 30px; padding: 0 8px;" placeholder="Enter Center Name">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 15px;">
+            <label style="font-size: 13px; font-weight: bold;">Person Name</label>
+            <input id="personName" style="border: 1px solid gray; border-radius: 3px; font-size: 12px; height: 30px; padding: 0 8px;" placeholder="Enter your Name">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 15px;">
+            <label style="font-size: 13px; font-weight: bold;">Contact Email</label>
+            <input id="contactEmail" style="border: 1px solid gray; border-radius: 3px; font-size: 12px; height: 30px; padding: 0 8px;" placeholder="***@gmail.com">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 15px;">
+            <label style="font-size: 13px; font-weight: bold;">Contact Number</label>
+            <input id="contactNumber" style="border: 1px solid gray; border-radius: 3px; font-size: 12px; height: 30px; padding: 0 8px;" placeholder="Enter Your Phone Number">
+        </div>
+        <button type="button" id="buttonClicked">Submit</button>
+    </div>
+<!--                    <input type="submit" value="Submit" data-bs-dismiss="modal" aria-label="Close"-->
+<!--                        style="margin: 10px 15px 0px 15px; font-size: 13px; height: 30px; font-weight: bold; padding-top: 2px;" />-->
                 </div>
             </div>
         </div>
     </div>
+    <script>
+        // Function to fetch and display centers
+        function fetchCenters() {
+            fetch('/get_centers/') // Replace with your API endpoint URL
+                .then(response => response.json())
+                .then(data => {
+                    const centerTableBody = document.getElementById('centerTableBody');
+                    centerTableBody.innerHTML = ''; // Clear existing table data
+
+                    // Loop through received data and create table rows
+                    data.forEach(center => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${center.id}</td>
+                            <td>${center.name}</td>
+                            <td>${center.number}</td>
+                            <td>${center.contact_email}</td>
+                            <td>${center.address}</td>
+                            <td class="status-${center.status ? 'approved' : 'pending'}"><span>${center.status ? 'Approved' : 'Pending'}</span></td>
+                            <td>
+                                <i class="fa-solid fa-pen-to-square" style="cursor: pointer;"></i>
+                                &nbsp;
+                                <i class="fa-solid fa-trash" style="cursor: pointer;"></i>
+                            </td>
+                        `;
+                        centerTableBody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching centers:', error);
+                });
+        }
+
+        // Call fetchCenters function when the page loads
+        window.onload = fetchCenters;
+    </script>
+    <script>
+        const submitForm = document.getElementById("buttonClicked");
+        submitForm.addEventListener('click', () => {
+            console.log("Starting api");
+            const centerName = document.getElementById('centerName').value;
+            const personName = document.getElementById('personName').value;
+            const contactEmail = document.getElementById('contactEmail').value;
+            const contactNumber = document.getElementById('contactNumber').value;
+
+            const data = {
+                "name": centerName,
+                "p_name": personName,
+                "contact_email": contactEmail,
+                "number": contactNumber
+            };
+
+            fetch('/add_center/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                // Handle success response if needed
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                // Handle error if needed
+            });
+        })
+
+    </script>
     <script>
         const removeSidebarBtn = document.getElementById("removeSidebarBtn");
         removeSidebarBtn.addEventListener('click', () => {

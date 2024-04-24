@@ -374,3 +374,10 @@ class WithdrawalRequest(models.Model):
     processed = models.BooleanField(default=False)
     message = models.CharField(max_length=255, blank=False, default="Pending", verbose_name='Message')
 
+
+class Center(models.Model):
+    name = models.CharField(max_length=100)
+    p_name = models.CharField(max_length=100)
+    contact_email = models.EmailField(unique=True)
+    number = models.IntegerField(max_length=10)
+    status = models.BooleanField(default=False)

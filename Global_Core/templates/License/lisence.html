@@ -283,16 +283,16 @@
             <div style="display: flex; flex: 1; flex-direction: column; justify-content: space-between;">
                 <!-- all sidebar btns -->
                 <div class="menus">
-                    <a href="/index.html">
+                    <a href="./indexxxx.html">
                         <p><i class="fa-solid fa-gauge-high"></i>&nbsp;&nbsp;Dashboard</p>
                     </a>
-                    <a href="/center.html">
+                    <a href="center_index">
                         <p><i class="fa-solid fa-users"></i>&nbsp;&nbsp;Center</p>
                     </a>
-                    <a href="/lisence.html">
+                    <a href="index.html">
                         <p class="active"><i class="fa-solid fa-money-check-dollar"></i>&nbsp;&nbsp;Lisence</p>
                     </a>
-                    <a href="/setting.html">
+                    <a href="setting.html">
                         <p><i class="fa-solid fa-gears"></i>&nbsp;&nbsp;Setting</p>
                     </a>
                 </div>
@@ -321,47 +321,21 @@
                     <p data-bs-toggle="modal" data-bs-target="#exampleModal">Add Lisence</p>
                 </div>
                 <!-- table -->
-                <div class="table-parent">
-                    <table class="table-child">
-                        <thead class="table-header">
-                            <tr>
-                                <td>Id</td>
-                                <td>Name</td>
-                                <td>Phone #</td>
-                                <td>Email Address</td>
-                                <td>Address</td>
-                                <td>Status</td>
-                                <td>Action</td>
-                            </tr>
-                        </thead>
-                        <tbody class="table-body">
-                            <tr>
-                                <td>01</td>
-                                <td>Zain</td>
-                                <td>03034532335</td>
-                                <td>zain@gmail.com</td>
-                                <td>Lahore, Pakistan</td>
-                                <td class="status-pending"><span>Pending</span></td>
-                                <td>
-                                    <i class="fa-solid fa-pen-to-square" style="cursor: pointer;"></i>
-                                    &nbsp;
-                                    <i class="fa-solid fa-trash" style="cursor: pointer;"></i>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>02</td>
-                                <td>Zain</td>
-                                <td>03034532335</td>
-                                <td>zain@gmail.com</td>
-                                <td>Lahore, Pakistan</td>
-                                <td class="status-approved"><span>Approved</span></td>
-                                <td>
-                                    <i class="fa-solid fa-pen-to-square" style="cursor: pointer;"></i>
-                                    &nbsp;
-                                    <i class="fa-solid fa-trash" style="cursor: pointer;"></i>
-                                </td>
-                            </tr>
-                        </tbody>
+                               <table class="table-child">
+                    <thead class="table-header">
+                        <tr>
+                            <td>Id</td>
+                            <td>Name</td>
+                            <td>Phone #</td>
+                            <td>Phone Number</td>
+                            <td>Address</td>
+                            <td>Status</td>
+                            <td>Action</td>
+                        </tr>
+                    </thead>
+                    <tbody class="table-body" id="centerTableBody">
+                        <!-- Center data will be populated here -->
+                    </tbody>
                     </table>
                 </div>
             </div>
@@ -392,7 +366,7 @@
                                 style="width: 40px; position: absolute; right: 0;"></i>
                         </div>
                     </div>
-                    <div class="selectCenterOptions" id="selectCenterOptions"></div>
+                     <div class="selectCenterOptions" id="selectCenterOptions"></div>
                     <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 15px;">
                         <label style="font-size: 13px; font-weight: bold;">Validate From</label>
                         <input type="date"
@@ -409,79 +383,144 @@
             </div>
         </div>
     </div>
-    <script>
-        const centers = [
-            { id: 1, center: "Center 1" },
-            { id: 2, center: "Center 2" },
-            { id: 3, center: "Center 3" },
-            { id: 4, center: "Center 4" },
-            { id: 5, center: "Center 5" },
-            { id: 6, center: "Center 6" },
-            { id: 7, center: "Center 7" },
-        ];
-        const selectContainer = document.getElementById("selectCenterOptions");
-        const searchBox = document.getElementById("centerSearchBox");
-        centers.forEach(center => {
-            const optionElement = document.createElement("p");
+     <script>
+        // Function to fetch and display center names
+        function fetchCenterNames() {
+            fetch('/search_centers/') // Replace with your API endpoint URL
+                console("wwedw")
+                .then(response => response.json())
+                .then(data => {
+                    const selectCenterOptions = document.getElementById('selectCenterOptions');
 
-            optionElement.textContent = center.center;
+                    // Clear existing options
+                    selectCenterOptions.innerHTML = '';
 
-            optionElement.addEventListener("click", () => {
-                searchBox.value = center.center;
-                const selectCenterOptions = document.getElementById("selectCenterOptions");
-                selectCenterOptions.style.display = "none";
-            });
-            selectContainer.appendChild(optionElement);
-        });
-        function updateOptions() {
-            const inputValue = searchBox.value.toLowerCase();
-            const filteredCenters = centers.filter(center => center.center.toLowerCase().includes(inputValue));
-
-            selectContainer.innerHTML = '';
-
-            filteredCenters.forEach(center => {
-                const optionElement = document.createElement("p");
-                optionElement.textContent = center.center;
-                optionElement.addEventListener("click", () => {
-                    searchBox.value = center.center;
-                    const selectCenterOptions = document.getElementById("selectCenterOptions");
-                    selectCenterOptions.style.display = "none";
+                    // Loop through received data and create options
+                    data.forEach(center => {
+                        const option = document.createElement('div');
+                        option.textContent = center.name;
+                        selectCenterOptions.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching center names:', error);
                 });
-                selectContainer.appendChild(optionElement);
-            });
         }
 
-        updateOptions();
-
-        searchBox.addEventListener("input", updateOptions);
-        const removeSidebarBtn = document.getElementById("removeSidebarBtn");
-        removeSidebarBtn.addEventListener('click', () => {
-            const sideBar = document.getElementById("sidebar");
-            sideBar.classList.toggle("remove-sidebar");
-            if (sideBar.classList.contains("remove-sidebar")) {
-                removeSidebarBtn.innerHTML = '<i class="fa-solid fa-arrow-right"></i>';
-            } else {
-                removeSidebarBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i>';
-            }
-        });
-
-        const removeSidebarBtn2 = document.getElementById("removeSidebarBtn2");
-        removeSidebarBtn2.addEventListener('click', () => {
-            const sideBar = document.getElementById("sidebar");
-            sideBar.classList.toggle("remove-sidebar");
-            if (sideBar.classList.contains("remove-sidebar")) {
-                removeSidebarBtn.innerHTML = '<i class="fa-solid fa-arrow-right"></i>';
-            } else {
-                removeSidebarBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i>';
-            }
-        });
-
-        const centerSearchBox = document.getElementById("centerSearchBox");
-        centerSearchBox.addEventListener('click', () => {
-            const selectCenterOptions = document.getElementById("selectCenterOptions");
-            selectCenterOptions.style.display = "flex";
-        });
+        // Call fetchCenterNames function when the page loads
+        window.onload = fetchCenterNames;
     </script>
+</body>
+
+        <script>
+        // Function to fetch and display centers
+        function fetchCenters() {
+            fetch('/filtered_centers/') // Replace with your API endpoint URL
+                .then(response => response.json())
+                .then(data => {
+                    const centerTableBody = document.getElementById('centerTableBody');
+                    centerTableBody.innerHTML = ''; // Clear existing table data
+
+                    // Loop through received data and create table rows
+                    data.forEach(center => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${center.id}</td>
+                            <td>${center.name}</td>
+                            <td>${center.number}</td>
+                            <td>${center.contact_email}</td>
+                            <td>${center.address}</td>
+                            <td class="status-${center.status ? 'approved' : 'pending'}"><span>${center.status ? 'Approved' : 'Pending'}</span></td>
+                            <td>
+                                <i class="fa-solid fa-pen-to-square" style="cursor: pointer;"></i>
+                                &nbsp;
+                                <i class="fa-solid fa-trash" style="cursor: pointer;"></i>
+                            </td>
+                        `;
+                        centerTableBody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching centers:', error);
+                });
+        }
+
+        // Call fetchCenters function when the page loads
+        window.onload = fetchCenters;
+    </script>
+<!--    <script>-->
+<!--        const centers = [-->
+<!--            { id: 1, center: "Center 1" },-->
+<!--            { id: 2, center: "Center 2" },-->
+<!--            { id: 3, center: "Center 3" },-->
+<!--            { id: 4, center: "Center 4" },-->
+<!--            { id: 5, center: "Center 5" },-->
+<!--            { id: 6, center: "Center 6" },-->
+<!--            { id: 7, center: "Center 7" },-->
+<!--        ];-->
+<!--        const selectContainer = document.getElementById("selectCenterOptions");-->
+<!--        const searchBox = document.getElementById("centerSearchBox");-->
+<!--        centers.forEach(center => {-->
+<!--            const optionElement = document.createElement("p");-->
+
+<!--            optionElement.textContent = center.center;-->
+
+<!--            optionElement.addEventListener("click", () => {-->
+<!--                searchBox.value = center.center;-->
+<!--                const selectCenterOptions = document.getElementById("selectCenterOptions");-->
+<!--                selectCenterOptions.style.display = "none";-->
+<!--            });-->
+<!--            selectContainer.appendChild(optionElement);-->
+<!--        });-->
+<!--        function updateOptions() {-->
+<!--            const inputValue = searchBox.value.toLowerCase();-->
+<!--            const filteredCenters = centers.filter(center => center.center.toLowerCase().includes(inputValue));-->
+
+<!--            selectContainer.innerHTML = '';-->
+
+<!--            filteredCenters.forEach(center => {-->
+<!--                const optionElement = document.createElement("p");-->
+<!--                optionElement.textContent = center.center;-->
+<!--                optionElement.addEventListener("click", () => {-->
+<!--                    searchBox.value = center.center;-->
+<!--                    const selectCenterOptions = document.getElementById("selectCenterOptions");-->
+<!--                    selectCenterOptions.style.display = "none";-->
+<!--                });-->
+<!--                selectContainer.appendChild(optionElement);-->
+<!--            });-->
+<!--        }-->
+
+<!--        updateOptions();-->
+
+<!--        searchBox.addEventListener("input", updateOptions);-->
+<!--        const removeSidebarBtn = document.getElementById("removeSidebarBtn");-->
+<!--        removeSidebarBtn.addEventListener('click', () => {-->
+<!--            const sideBar = document.getElementById("sidebar");-->
+<!--            sideBar.classList.toggle("remove-sidebar");-->
+<!--            if (sideBar.classList.contains("remove-sidebar")) {-->
+<!--                removeSidebarBtn.innerHTML = '<i class="fa-solid fa-arrow-right"></i>';-->
+<!--            } else {-->
+<!--                removeSidebarBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i>';-->
+<!--            }-->
+<!--        });-->
+
+<!--        const removeSidebarBtn2 = document.getElementById("removeSidebarBtn2");-->
+<!--        removeSidebarBtn2.addEventListener('click', () => {-->
+<!--            const sideBar = document.getElementById("sidebar");-->
+<!--            sideBar.classList.toggle("remove-sidebar");-->
+<!--            if (sideBar.classList.contains("remove-sidebar")) {-->
+<!--                removeSidebarBtn.innerHTML = '<i class="fa-solid fa-arrow-right"></i>';-->
+<!--            } else {-->
+<!--                removeSidebarBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i>';-->
+<!--            }-->
+<!--        });-->
+
+<!--        const centerSearchBox = document.getElementById("centerSearchBox");-->
+<!--        centerSearchBox.addEventListener('click', () => {-->
+<!--            const selectCenterOptions = document.getElementById("selectCenterOptions");-->
+<!--            selectCenterOptions.style.display = "flex";-->
+<!--        });-->
+<!--    </script>-->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4"
         crossorigin="anonymous"></script>

@@ -24,7 +24,7 @@ from rest_framework.decorators import api_view
 from .models import Sales, CustomUser
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
-from .serializers import WithdrawalRequestSerializer
+from .serializers import *
 import openai
 
 from django.db.models.functions import TruncDate
@@ -320,8 +320,41 @@ class MealSuggestion(APIView):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@api_view(['POST'])
+def add_center(request):
+    if request.method == 'POST':
+        serializer = CenterSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"serializer data":serializer.data , "message": "SUCCESS"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def get_centers(request):
+    if request.method == 'GET':
+        centers = Center.objects.all()
+        serializer = CenterSerializer(centers, many=True)
+        return Response(serializer.data)
+
+@api_view(['GET'])
+def filtered_centers(request):
+    if request.method == 'GET':
+        centers = Center.objects.all()
+        filtered = centers.filter(status=True)
+        serializer = CenterSerializer(filtered, many=True)
+        return Response(serializer.data)
+
+@api_view(['GET'])
+def search_centers(request):
+    if request.method == 'GET':
+        pending_centers = Center.objects.filter(status=False)
+        serializer = CenterSerializer(pending_centers, many=True)
+        return Response(serializer.data)
+
 def license_index(request):
-    return render(request, 'License/index.html')
+    return render(request, 'License/lisence.html')
 
 def center_index(request):
     return render(request, 'License/center.html')
+
