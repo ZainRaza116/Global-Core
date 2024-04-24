@@ -21,4 +21,6 @@ urlpatterns = [
     path('Global_Core/chargeback/wallet', WalletAPIView.as_view(), name='wallet_payment'),
     path('withdrawal-request/', WithdrawalRequestAPIView.as_view(), name='withdrawal-request'),
     path('meal-suggestion/', MealSuggestion.as_view(), name='meal-suggestion'),
+    path("license_index/", views.license_index, name="license_index"),
+    path("center_index/", views.center_index, name="license_index"),
 ]

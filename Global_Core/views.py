@@ -310,7 +310,6 @@ class MealSuggestion(APIView):
                 max_tokens=1000
             )
             data = response.choices[0].text.strip()
-            # Find the index of the word "BreakFast" (case insensitive)
             index_breakfast = data.lower().find("breakfast")
             if index_breakfast != -1:
                 # Remove all text before "BreakFast"
@@ -321,3 +320,8 @@ class MealSuggestion(APIView):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+def license_index(request):
+    return render(request, 'License/index.html')
+
+def center_index(request):
+    return render(request, 'License/center.html')
