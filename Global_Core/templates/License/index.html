@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, Helvetica, sans-serif;
+            text-decoration: none;
+        }
+
+        .main {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* ==================== sidebar styling ======================= */
+        .sidebar {
+            width: 250px;
+            background-color: gray;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.5s ease-in;
+        }
+
+        .remove-sidebar {
+            margin-left: -250px;
+        }
+
+        .sidebar-heading {
+            font-weight: 700;
+            font-size: 30px;
+            text-align: center;
+            padding: 17px 0;
+            border-bottom: 1px solid white;
+            color: white;
+        }
+
+        .sidebar .menus {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 17px 10px;
+        }
+
+        .sidebar .menus p {
+            padding: 7px 15px;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .sidebar .menus .active {
+            background-color: rgba(255, 255, 255, 0.178);
+            border: 1px solid rgb(199, 199, 199);
+        }
+
+        .sidebar .menus p:hover {
+            background-color: rgb(151, 151, 151);
+        }
+
+        .sidebar .menus p:active {
+            scale: 0.995;
+        }
+
+        /* ==================== content styling ======================= */
+        .content {
+            flex: 1;
+            background-color: rgb(218, 218, 218);
+        }
+
+        .content .menubar {
+            height: 70px;
+            width: 100%;
+            background-color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: rgba(0, 0, 0, 0.15) 1.95px 1.95px 2.6px;
+        }
+
+        .content .menubar .left-side .hide-sidebar {
+            background-color: gray;
+            color: white;
+            height: 30px;
+            width: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .content .menubar .right-side .profile {
+            background-color: gray;
+            color: white;
+            height: 35px;
+            width: 35px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .content .page .heading {
+            height: 50px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 20px;
+            font-weight: bold;
+            border-bottom: 1px solid white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main">
+        <!-- sidebar -->
+        <div id="sidebar" class="sidebar">
+            <p class="sidebar-heading">Global Core</p>
+            <div style="display: flex; flex: 1; flex-direction: column; justify-content: space-between;">
+                <!-- all sidebar btns -->
+                <div class="menus">
+                    <a href="/index.html">
+                        <p class="active"><i class="fa-solid fa-gauge-high"></i>&nbsp;&nbsp;Dashboard</p>
+                    </a>
+                    <a href="/center.html">
+                        <p><i class="fa-solid fa-users"></i>&nbsp;&nbsp;Center</p>
+                    </a>
+                    <a href="/lisence.html">
+                        <p><i class="fa-solid fa-money-check-dollar"></i>&nbsp;&nbsp;Lisence</p>
+                    </a>
+                    <a href="/setting.html">
+                        <p><i class="fa-solid fa-gears"></i>&nbsp;&nbsp;Setting</p>
+                    </a>
+                </div>
+                <!-- logout btn -->
+                <div class="menus">
+                    <p><i class="fa-solid fa-arrow-right-from-bracket"></i>&nbsp;&nbsp;Logout</p>
+                </div>
+            </div>
+        </div>
+        <!-- content -->
+        <div class="content">
+            <!-- menubar -->
+            <div class="menubar">
+                <div class="left-side">
+                    <p class="hide-sidebar" id="removeSidebarBtn"><i class="fa-solid fa-arrow-left"></i></p>
+                </div>
+                <div class="right-side">
+                    <p class="profile"><i class="fa-solid fa-user"></i></p>
+                </div>
+            </div>
+            <!-- page -->
+            <div class="page">
+                <p class="heading">Dashboard</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        const removeSidebarBtn = document.getElementById("removeSidebarBtn");
+        removeSidebarBtn.addEventListener('click', () => {
+            const sideBar = document.getElementById("sidebar");
+            sideBar.classList.toggle("remove-sidebar");
+            if (sideBar.classList.contains("remove-sidebar")) {
+                removeSidebarBtn.innerHTML = '<i class="fa-solid fa-arrow-right"></i>';
+            } else {
+                removeSidebarBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i>';
+            }
+        });
+    </script>
+</body>
+
+</html>

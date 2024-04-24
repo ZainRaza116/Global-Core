@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, Helvetica, sans-serif;
+            text-decoration: none !important;
+        }
+
+        p {
+            margin-bottom: 0px !important;
+        }
+
+        .main {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* ==================== sidebar styling ======================= */
+        .sidebar {
+            width: 250px;
+            background-color: gray;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.5s ease-in;
+        }
+
+        .remove-sidebar {
+            margin-left: -250px;
+        }
+
+        .sidebar-heading {
+            font-weight: 700;
+            font-size: 30px;
+            text-align: center;
+            padding: 12px 0;
+            border-bottom: 1px solid white;
+            color: white;
+            margin-bottom: 0px !important;
+        }
+
+        .sidebar .menus {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 17px 10px;
+        }
+
+        .sidebar .menus p {
+            padding: 4px 15px !important;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            margin: 0px !important;
+        }
+
+        .sidebar .menus .active {
+            background-color: rgba(255, 255, 255, 0.178);
+            border: 1px solid rgb(199, 199, 199);
+        }
+
+        .sidebar .menus p:hover {
+            background-color: rgb(151, 151, 151);
+        }
+
+        .sidebar .menus p:active {
+            scale: 0.995;
+        }
+
+        /* ==================== content styling ======================= */
+        .content {
+            flex: 1;
+            background-color: rgb(218, 218, 218);
+        }
+
+        .content .menubar {
+            height: 70px;
+            width: 100%;
+            background-color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: rgba(0, 0, 0, 0.15) 1.95px 1.95px 2.6px;
+        }
+
+        .content .menubar .left-side .hide-sidebar {
+            background-color: gray;
+            color: white;
+            height: 30px;
+            width: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .content .menubar .right-side .profile {
+            background-color: gray;
+            color: white;
+            height: 35px;
+            width: 35px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .content .page .heading {
+            height: 50px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 20px;
+            font-weight: bold;
+            border-bottom: 1px solid white;
+        }
+
+        .content .page .buttons {
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: end;
+            padding: 0 20px;
+        }
+
+        .content .page .buttons p {
+            background-color: gray;
+            color: white;
+            width: 100px;
+            height: 33px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .content .page .buttons p:active {
+            scale: 0.98;
+        }
+
+        /* ==================== content table styling ======================= */
+
+        .table-parent {
+            overflow: auto;
+            border: 1px solid rgba(0, 0, 0, 0);
+            margin: 0 10px;
+        }
+
+        .table-child {
+            width: 100%;
+            font-size: 12px;
+        }
+
+        .table-child .table-header {
+            font-weight: 600;
+            height: 35px;
+            background-color: rgb(203, 203, 203);
+        }
+
+        .table-child .table-header td {
+            padding: 0 5px;
+        }
+
+        .table-child .table-body tr {
+            height: 35px;
+            background-color: white;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.178);
+        }
+
+        .table-child .table-body td {
+            padding: 0 5px;
+        }
+
+        .table-child .table-body .status-pending span {
+            background-color: red;
+            padding: 2px 5px;
+            border-radius: 10px;
+            color: white;
+            font-size: 10px;
+        }
+
+        .table-child .table-body .status-approved span {
+            background-color: green;
+            padding: 2px 5px;
+            border-radius: 10px;
+            color: white;
+            font-size: 10px;
+        }
+
+        .cross-btn-sidebar {
+            position: absolute;
+            left: 220px;
+            width: 30px;
+            height: 30px;
+            display: none;
+        }
+
+        @media screen and (max-width: 820px) {
+            .sidebar {
+                position: absolute;
+                height: 100vh;
+            }
+
+            .cross-btn-sidebar {
+                display: block;
+            }
+        }
+
+        @media screen and (max-width: 600px) {
+            .table-parent {
+                width: 300px;
+            }
+
+            .table-child {
+                width: 700px;
+            }
+        }
+
+        /* ==================== modal styling ======================= */
+
+        .modal-content>.header-modal {
+            display: flex;
+            border-radius: 5px 5px 0px 0px;
+            height: 40px;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            background-color: rgb(230, 230, 230);
+        }
+
+        .selectCenterOptions {
+            margin: 0 15px;
+            padding: 8px 5px;
+            font-size: 11px;
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            position: absolute;
+            background-color: rgb(230, 230, 230);
+            width: 94%;
+            margin-top: 51px;
+            border-radius: 3px;
+            box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
+        }
+
+        .selectCenterOptions p {
+            padding: 3px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .selectCenterOptions p:hover {
+            background-color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Full Page -->
+    <div class="main">
+        <!-- sidebar -->
+        <div id="sidebar" class="sidebar">
+            <p class="sidebar-heading">Global Core</p>
+            <div style="display: flex; flex: 1; flex-direction: column; justify-content: space-between;">
+                <!-- all sidebar btns -->
+                <div class="menus">
+                    <a href="/index.html">
+                        <p><i class="fa-solid fa-gauge-high"></i>&nbsp;&nbsp;Dashboard</p>
+                    </a>
+                    <a href="/center.html">
+                        <p><i class="fa-solid fa-users"></i>&nbsp;&nbsp;Center</p>
+                    </a>
+                    <a href="/lisence.html">
+                        <p class="active"><i class="fa-solid fa-money-check-dollar"></i>&nbsp;&nbsp;Lisence</p>
+                    </a>
+                    <a href="/setting.html">
+                        <p><i class="fa-solid fa-gears"></i>&nbsp;&nbsp;Setting</p>
+                    </a>
+                </div>
+                <!-- logout btn -->
+                <div class="menus">
+                    <p><i class="fa-solid fa-arrow-right-from-bracket"></i>&nbsp;&nbsp;Logout</p>
+                </div>
+            </div>
+            <button class="cross-btn-sidebar" id="removeSidebarBtn2"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <!-- content -->
+        <div class="content">
+            <!-- menubar -->
+            <div class="menubar">
+                <div class="left-side">
+                    <p class="hide-sidebar" id="removeSidebarBtn"><i class="fa-solid fa-arrow-left"></i></p>
+                </div>
+                <div class="right-side">
+                    <p class="profile"><i class="fa-solid fa-user"></i></p>
+                </div>
+            </div>
+            <!-- page -->
+            <div class="page">
+                <p class="heading">Lisence</p>
+                <div class="buttons">
+                    <p data-bs-toggle="modal" data-bs-target="#exampleModal">Add Lisence</p>
+                </div>
+                <!-- table -->
+                <div class="table-parent">
+                    <table class="table-child">
+                        <thead class="table-header">
+                            <tr>
+                                <td>Id</td>
+                                <td>Name</td>
+                                <td>Phone #</td>
+                                <td>Email Address</td>
+                                <td>Address</td>
+                                <td>Status</td>
+                                <td>Action</td>
+                            </tr>
+                        </thead>
+                        <tbody class="table-body">
+                            <tr>
+                                <td>01</td>
+                                <td>Zain</td>
+                                <td>03034532335</td>
+                                <td>zain@gmail.com</td>
+                                <td>Lahore, Pakistan</td>
+                                <td class="status-pending"><span>Pending</span></td>
+                                <td>
+                                    <i class="fa-solid fa-pen-to-square" style="cursor: pointer;"></i>
+                                    &nbsp;
+                                    <i class="fa-solid fa-trash" style="cursor: pointer;"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>02</td>
+                                <td>Zain</td>
+                                <td>03034532335</td>
+                                <td>zain@gmail.com</td>
+                                <td>Lahore, Pakistan</td>
+                                <td class="status-approved"><span>Approved</span></td>
+                                <td>
+                                    <i class="fa-solid fa-pen-to-square" style="cursor: pointer;"></i>
+                                    &nbsp;
+                                    <i class="fa-solid fa-trash" style="cursor: pointer;"></i>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modals -->
+    <!-- Add Lisence Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <!-- modal header -->
+                <div class="header-modal">
+                    <p style="font-weight: 700;">Add Lisence</p>
+                    <p data-bs-dismiss="modal" aria-label="Close"
+                        style="background-color: gray; height: 20px; width: 20px; border-radius: 5px; color: white; cursor: pointer;">
+                        <i class="fa-solid fa-xmark" style="position: absolute; top: 12px; margin-left: 4px;"></i>
+                    </p>
+                </div>
+                <!-- modal content -->
+                <div style="display: flex; flex-direction: column; gap: 10px; padding: 20px 0;">
+                    <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 15px;">
+                        <label style="font-size: 13px; font-weight: bold;">Select Center</label>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <input
+                                style="flex: 1; border: 1px solid gray; border-radius: 3px; font-size: 12px; height: 30px; padding: 0 8px;"
+                                id="centerSearchBox" />
+                            <i class="fa-solid fa-magnifying-glass"
+                                style="width: 40px; position: absolute; right: 0;"></i>
+                        </div>
+                    </div>
+                    <div class="selectCenterOptions" id="selectCenterOptions"></div>
+                    <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 15px;">
+                        <label style="font-size: 13px; font-weight: bold;">Validate From</label>
+                        <input type="date"
+                            style="border: 1px solid gray; border-radius: 3px; font-size: 12px; height: 30px; padding: 0 8px;" />
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 15px;">
+                        <label style="font-size: 13px; font-weight: bold;">Validate To</label>
+                        <input type="date"
+                            style="border: 1px solid gray; border-radius: 3px; font-size: 12px; height: 30px; padding: 0 8px;" />
+                    </div>
+                    <input type="submit" value="Submit" data-bs-dismiss="modal" aria-label="Close"
+                        style="margin: 10px 15px 0px 15px; font-size: 13px; height: 30px; font-weight: bold; padding-top: 2px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const centers = [
+            { id: 1, center: "Center 1" },
+            { id: 2, center: "Center 2" },
+            { id: 3, center: "Center 3" },
+            { id: 4, center: "Center 4" },
+            { id: 5, center: "Center 5" },
+            { id: 6, center: "Center 6" },
+            { id: 7, center: "Center 7" },
+        ];
+        const selectContainer = document.getElementById("selectCenterOptions");
+        const searchBox = document.getElementById("centerSearchBox");
+        centers.forEach(center => {
+            const optionElement = document.createElement("p");
+
+            optionElement.textContent = center.center;
+
+            optionElement.addEventListener("click", () => {
+                searchBox.value = center.center;
+                const selectCenterOptions = document.getElementById("selectCenterOptions");
+                selectCenterOptions.style.display = "none";
+            });
+            selectContainer.appendChild(optionElement);
+        });
+        function updateOptions() {
+            const inputValue = searchBox.value.toLowerCase();
+            const filteredCenters = centers.filter(center => center.center.toLowerCase().includes(inputValue));
+
+            selectContainer.innerHTML = '';
+
+            filteredCenters.forEach(center => {
+                const optionElement = document.createElement("p");
+                optionElement.textContent = center.center;
+                optionElement.addEventListener("click", () => {
+                    searchBox.value = center.center;
+                    const selectCenterOptions = document.getElementById("selectCenterOptions");
+                    selectCenterOptions.style.display = "none";
+                });
+                selectContainer.appendChild(optionElement);
+            });
+        }
+
+        updateOptions();
+
+        searchBox.addEventListener("input", updateOptions);
+        const removeSidebarBtn = document.getElementById("removeSidebarBtn");
+        removeSidebarBtn.addEventListener('click', () => {
+            const sideBar = document.getElementById("sidebar");
+            sideBar.classList.toggle("remove-sidebar");
+            if (sideBar.classList.contains("remove-sidebar")) {
+                removeSidebarBtn.innerHTML = '<i class="fa-solid fa-arrow-right"></i>';
+            } else {
+                removeSidebarBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i>';
+            }
+        });
+
+        const removeSidebarBtn2 = document.getElementById("removeSidebarBtn2");
+        removeSidebarBtn2.addEventListener('click', () => {
+            const sideBar = document.getElementById("sidebar");
+            sideBar.classList.toggle("remove-sidebar");
+            if (sideBar.classList.contains("remove-sidebar")) {
+                removeSidebarBtn.innerHTML = '<i class="fa-solid fa-arrow-right"></i>';
+            } else {
+                removeSidebarBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i>';
+            }
+        });
+
+        const centerSearchBox = document.getElementById("centerSearchBox");
+        centerSearchBox.addEventListener('click', () => {
+            const selectCenterOptions = document.getElementById("selectCenterOptions");
+            selectCenterOptions.style.display = "flex";
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4"
+        crossorigin="anonymous"></script>
+</body>
+
+</html>

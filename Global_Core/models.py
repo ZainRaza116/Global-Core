@@ -374,4 +374,3 @@ class WithdrawalRequest(models.Model):
     processed = models.BooleanField(default=False)
     message = models.CharField(max_length=255, blank=False, default="Pending", verbose_name='Message')
 
-
