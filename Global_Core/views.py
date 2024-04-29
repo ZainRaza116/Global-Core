@@ -359,7 +359,7 @@ def send_license(request):
         email = request.data.get('email')  # Use request.data for JSON data
         if email:
             license_key = ''.join(random.choices(string.digits, k=18))  # Generate random 18-digit string
-            print("Sending license to " + email)
+            print("Sending license to " + email
             send_mail(
                 'Your License Key',
                 f'Your license key is: {license_key}',
