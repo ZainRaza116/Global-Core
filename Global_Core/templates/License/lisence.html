@@ -286,10 +286,10 @@
                     <a href="./indexxxx.html">
                         <p><i class="fa-solid fa-gauge-high"></i>&nbsp;&nbsp;Dashboard</p>
                     </a>
-                    <a href="center_index">
+                    <a href="/center_index/">
                         <p><i class="fa-solid fa-users"></i>&nbsp;&nbsp;Center</p>
                     </a>
-                    <a href="index.html">
+                    <a href="/license_index/">
                         <p class="active"><i class="fa-solid fa-money-check-dollar"></i>&nbsp;&nbsp;Lisence</p>
                     </a>
                     <a href="setting.html">
@@ -358,13 +358,16 @@
                 <div style="display: flex; flex-direction: column; gap: 10px; padding: 20px 0;">
                     <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 15px;">
                         <label style="font-size: 13px; font-weight: bold;">Select Center</label>
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <input
-                                style="flex: 1; border: 1px solid gray; border-radius: 3px; font-size: 12px; height: 30px; padding: 0 8px;"
-                                id="centerSearchBox" />
-                            <i class="fa-solid fa-magnifying-glass"
-                                style="width: 40px; position: absolute; right: 0;"></i>
-                        </div>
+<!--                        <div style="display: flex; justify-content: space-between; align-items: center;">-->
+<!--                            <input-->
+<!--                                style="flex: 1; border: 1px solid gray; border-radius: 3px; font-size: 12px; height: 30px; padding: 0 8px;"-->
+<!--                                id="centerSearchBox" />-->
+<!--                            <i class="fa-solid fa-magnifying-glass"-->
+<!--                                style="width: 40px; position: absolute; right: 0;"></i>-->
+<!--                        </div>-->
+    <select id="centerSelect" style="border: 1px solid gray; border-radius: 3px; font-size: 12px; height: 30px; padding: 0 8px;">
+        <!-- Options will be added dynamically here -->
+    </select>
                     </div>
                      <div class="selectCenterOptions" id="selectCenterOptions"></div>
                     <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 15px;">
@@ -383,35 +386,29 @@
             </div>
         </div>
     </div>
-     <script>
-        // Function to fetch and display center names
-        function fetchCenterNames() {
-            fetch('/search_centers/') // Replace with your API endpoint URL
-                console("wwedw")
-                .then(response => response.json())
-                .then(data => {
-                    const selectCenterOptions = document.getElementById('selectCenterOptions');
 
-                    // Clear existing options
-                    selectCenterOptions.innerHTML = '';
-
-                    // Loop through received data and create options
-                    data.forEach(center => {
-                        const option = document.createElement('div');
-                        option.textContent = center.name;
-                        selectCenterOptions.appendChild(option);
-                    });
-                })
-                .catch(error => {
-                    console.error('Error fetching center names:', error);
-                });
-        }
-
-        // Call fetchCenterNames function when the page loads
-        window.onload = fetchCenterNames;
-    </script>
 </body>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
+    <script>
+        // Make a GET request to your API endpoint
+        axios.get('http://127.0.0.1:8000/search_centers/')
+            .then(response => {
+                // Extract names from the response data
+                const names = response.data.map(center => center.name);
+
+                // Populate select element with options
+                const selectElement = document.getElementById('centerSelect');
+                names.forEach(name => {
+                    const option = document.createElement('option');
+                    option.text = name;
+                    selectElement.add(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+            });
+    </script>
         <script>
         // Function to fetch and display centers
         function fetchCenters() {

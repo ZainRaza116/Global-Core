@@ -23,5 +23,6 @@ urlpatterns = [
     path("license_index/", views.license_index, name="license_index"),
     path("filtered_centers/", views.filtered_centers, name="license_index"),
     path("search_centers/", views.search_centers, name="license_index"),
-    path("center_index/", views.center_index, name="license_index")
+    path("center_index/", views.center_index, name="license_index"),
+    path('send_license/', send_license, name='send_license'),
 ]

@@ -27,6 +27,15 @@ class CustomUser(AbstractUser, PermissionsMixin):
     class Meta:
         verbose_name_plural = "Users"
 
+class License(models.Model):
+    user = models.OneToOneField('CustomUser', on_delete=models.CASCADE)
+    key = models.CharField(max_length=18)
+    valid_from = models.DateTimeField()
+    valid_to = models.DateTimeField()
+
+    def is_valid(self):
+        now = timezone.now()
+        return self.valid_from <= now <= self.valid_to
 
 class Dashboard(models.Model):
     pass

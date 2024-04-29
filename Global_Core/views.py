@@ -1,7 +1,8 @@
 
 import requests
 import json
-
+import string
+from django.core.mail import send_mail
 from django.db.models import Count, Sum, F
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
@@ -9,6 +10,7 @@ from django.utils.datetime_safe import datetime
 from django.utils.functional import SimpleLazyObject
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView
+import random
 from rest_framework.views import APIView
 from .models import *
 from .authorizepayment import authorize_credit_card, charge_credit_card
@@ -351,6 +353,25 @@ def search_centers(request):
         pending_centers = Center.objects.filter(status=False)
         serializer = CenterSerializer(pending_centers, many=True)
         return Response(serializer.data)
+@api_view(['POST'])
+def send_license(request):
+    if request.method == 'POST':
+        email = request.data.get('email')  # Use request.data for JSON data
+        if email:
+            license_key = ''.join(random.choices(string.digits, k=18))  # Generate random 18-digit string
+            print("Sending license to " + email)
+            send_mail(
+                'Your License Key',
+                f'Your license key is: {license_key}',
+                'syedzaynraza@gmail.com',  # Replace with your email address
+                [email],
+                fail_silently=False,
+            )
+            return Response({'message': 'License key sent successfully!'})
+        else:
+            return Response({'error': 'Invalid email address!'}, status=400)
+    else:
+        return Response({'error': 'Method not allowed!'}, status=405)
 
 def license_index(request):
     return render(request, 'License/lisence.html')
